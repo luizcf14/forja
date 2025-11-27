@@ -458,6 +458,201 @@ a:hover {
     background: var(--bg-color);
 }
 
+
+.card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary-color);
+    box-shadow: 0 10px 15px -3px rgba(132, 204, 22, 0.1);
+}
+
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem;
+}
+
+.card-title {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.card-text {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    color: #000;
+    /* Contrast for light green */
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    color: #000;
+    transform: scale(1.02);
+}
+
+.btn-outline-secondary {
+    color: var(--text-muted);
+    border-color: var(--border-color);
+}
+
+.btn-outline-secondary:hover {
+    background: var(--border-color);
+    color: white;
+    border-color: var(--border-color);
+}
+
+/* Forms */
+.form-control,
+.form-select {
+    background-color: #27272a;
+    /* Match card bg for consistency */
+    border: 1px solid var(--border-color);
+    color: #ffffff;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: #27272a;
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 0 0 2px rgba(132, 204, 22, 0.2);
+}
+
+.form-control::placeholder {
+    color: #a1a1aa;
+    /* Brighter placeholder */
+}
+
+/* Utilities */
+.text-gradient {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-section {
+    padding: 5rem 0;
+    text-align: center;
+    position: relative;
+}
+
+/* Indigenous Graphic Element (Divider) */
+.indigenous-divider {
+    height: 8px;
+    background-image: repeating-linear-gradient(90deg,
+            var(--primary-color) 0px,
+            var(--primary-color) 20px,
+            var(--bg-color) 20px,
+            var(--bg-color) 40px,
+            var(--secondary-color) 40px,
+            var(--secondary-color) 60px,
+            var(--bg-color) 60px,
+            var(--bg-color) 80px);
+    margin: 2rem 0;
+    opacity: 0.8;
+}
+
+/* Chat Interface Specifics */
+.sidebar {
+    background-color: var(--card-bg) !important;
+    border-right: 1px solid var(--border-color);
+}
+
+.sidebar-heading {
+    color: var(--secondary-color) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.85rem;
+}
+
+#chat-messages {
+    background-color: #18181b !important;
+    /* Match body bg */
+    border: 1px solid var(--border-color);
+}
+
+/* Chat Bubbles */
+.card.bg-primary {
+    background: var(--primary-color) !important;
+    color: black !important;
+    border: none;
+}
+
+.card.bg-white {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-color);
+}
+
+/* Aggressive Text Color Override */
+body,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+div,
+li,
+td,
+th,
+label,
+input,
+textarea,
+select,
+.card-body,
+.modal-body {
+    color: var(--text-color);
+}
+
+/* Exception for Primary Button Text (Black on Green) */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:active,
+.btn-primary:focus {
+    color: #000000 !important;
+}
+
+/* Exception for specific badges or alerts if needed */
+.badge.bg-light {
+    color: #000000 !important;
+}
+
+/* Ensure links are visible */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
 ::-webkit-scrollbar-thumb {
     background: var(--border-color);
     border-radius: 4px;
@@ -465,4 +660,38 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
+}
+
+/* Specific Home Page Overrides */
+.lead {
+    color: var(--text-muted) !important;
+}
+
+.form-label {
+    color: var(--text-color) !important;
+}
+
+/* Fix Badge Contrast */
+.badge.bg-light {
+    background-color: var(--card-bg) !important;
+    color: var(--primary-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Ensure all text-muted is visible */
+.text-muted {
+    color: #d4d4d8 !important;
+    /* Zinc 300 */
+}
+
+/* Ensure card text is visible */
+.card-text {
+    color: #d4d4d8 !important;
+}
+
+/* Ensure small text is visible */
+small,
+.small {
+    color: #a1a1aa !important;
+    /* Zinc 400 */
 }
