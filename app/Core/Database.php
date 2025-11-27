@@ -7,7 +7,7 @@ class Database
     public function __construct()
     {
         try {
-            $dbFile = __DIR__ . '/../database.sqlite';
+            $dbFile = __DIR__ . '/../../database.sqlite';
             $this->pdo = new PDO('sqlite:' . $dbFile);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->initDb();
@@ -80,6 +80,38 @@ class Database
         ]);
 
         return $this->pdo->lastInsertId();
+    }
+
+    public function updateAgent($id, $data)
+    {
+        $sql = "UPDATE agents SET 
+                subject = :subject, 
+                type = :type, 
+                behaviour = :behaviour, 
+                details = :details";
+
+        // Only update knowledge_base if a new file was uploaded
+        if (!empty($data['knowledge_base'])) {
+            $sql .= ", knowledge_base = :knowledge_base";
+        }
+
+        $sql .= " WHERE id = :id";
+
+        $stmt = $this->pdo->prepare($sql);
+
+        $params = [
+            ':id' => $id,
+            ':subject' => $data['subject'] ?? '',
+            ':type' => $data['type'] ?? '',
+            ':behaviour' => $data['behaviour'] ?? '',
+            ':details' => $data['details'] ?? ''
+        ];
+
+        if (!empty($data['knowledge_base'])) {
+            $params[':knowledge_base'] = $data['knowledge_base'];
+        }
+
+        return $stmt->execute($params);
     }
 
     // --- USERS ---

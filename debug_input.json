@@ -1,0 +1,13 @@
+{
+    "agent": {
+        "subject": "Test Agent",
+        "type": "Fast",
+        "behaviour": "You are a helpful assistant.",
+        "details": "None",
+        "knowledge_base": ""
+    },
+    "message": "Hello, are you working?",
+    "session_id": "debug_session_123",
+    "history": [],
+    "uploads_dir": "c:\\Users\\luizc\\.gemini\\antigravity\\scratch\\agent_forge\\public\\uploads\\"
+}

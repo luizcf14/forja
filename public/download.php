@@ -7,7 +7,7 @@ if (!isset($_GET['id'])) {
 
 $id = (int) $_GET['id'];
 $db = new Database();
-$agent = $db->getById($id);
+$agent = $db->getAgentById($id);
 
 if (!$agent) {
     die("Agent not found");

@@ -8,13 +8,55 @@ if (!isset($_SESSION['user'])) {
 }
 
 $message = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_agent']) || isset($_POST['save_download']))) {
     $subject = $_POST['subject'] ?? '';
     $type = $_POST['type'] ?? 'Fast';
     $behaviour = $_POST['behaviour'] ?? '';
     $details = $_POST['details'] ?? '';
 
     // Handle File Upload
+    $knowledgeBase = '';
+    if (isset($_FILES['knowledge_base']) && $_FILES['knowledge_base']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = __DIR__ . '/uploads/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $fileName = basename($_FILES['knowledge_base']['name']);
+        $targetPath = $uploadDir . $fileName;
+
+        // Basic validation (ensure unique name to avoid overwrite issues in real app)
+        $fileName = time() . '_' . $fileName;
+        $targetPath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($_FILES['knowledge_base']['tmp_name'], $targetPath)) {
+            $knowledgeBase = $fileName;
+        }
+    }
+
+    $db = new Database();
+    $agentId = $db->insertAgent([
+        'user_id' => $_SESSION['user_id'] ?? null,
+        'subject' => $subject,
+        'type' => $type,
+        'behaviour' => $behaviour,
+        'details' => $details,
+        'knowledge_base' => $knowledgeBase
+    ]);
+
+    if ($agentId) {
+        if (isset($_POST['save_download'])) {
+            // Redirect to download page
+            header("Location: download.php?id=$agentId&download=1");
+            exit;
+        } else { // save_agent was pressed
+            $_SESSION['success_message'] = "Agente criado com sucesso!";
+            header("Location: index.php"); // Redirect to dashboard or agent list
+            exit;
+        }
+    } else {
+        $message = "Failed to create agent.";
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -25,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Criar Novo Agente - Agent Forge</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
 
@@ -94,9 +137,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                                     placeholder="Quaisquer instruções ou restrições específicas..."></textarea>
                             </div>
 
-                            <div class="d-grid gap-2 pt-3">
-                                <button type="submit" name="save" class="btn btn-primary btn-lg">Salvar e Baixar
-                                    Configuração</button>
+                            <div class="d-grid gap-2 pt-3 d-md-flex justify-content-md-end">
+                                <button type="submit" name="save_agent" class="btn btn-secondary btn-lg me-md-2">
+                                    <i class="bi bi-save"></i> Salvar Agente
+                                </button>
+                                <button type="submit" name="save_download" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-download"></i> Salvar e Baixar
+                                </button>
                             </div>
                         </form>
                     </div>
