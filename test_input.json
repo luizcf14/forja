@@ -1,0 +1,13 @@
+{
+    "agent": {
+        "type": "Fast",
+        "behaviour": "You are a test agent.",
+        "details": "None"
+    },
+    "message": "Summarize the document in the knowledge base.",
+    "session_id": "test_session_manual_3",
+    "history": [],
+    "knowledge_base_files": [
+        "c:/Users/luizc/.gemini/antigravity/scratch/agent_forge/public/uploads/1764876356_Mining-Appendix-ATBD-Collection-9.docx.pdf"
+    ]
+}

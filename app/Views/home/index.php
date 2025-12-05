@@ -30,7 +30,7 @@
     </div>
 <?php else: ?>
     <div class="hero-section">
-        <h1 class="display-5 fw-bold mb-3">Sua Frota de Agentes</h1>
+        <h1 class="display-5 fw-bold mb-3">Forja de Agentes do Parente</h1>
         <p class="text-muted mb-4">Gerencie e configure sua força de trabalho de IA.</p>
         <a href="/agents/create" class="btn btn-primary btn-lg shadow-sm">
             + Criar Novo Agente

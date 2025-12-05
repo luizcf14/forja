@@ -172,4 +172,54 @@ class AgentController extends Controller
         echo $json;
         exit;
     }
+    public function optimize()
+    {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['error' => 'Method not allowed']);
+            exit;
+        }
+
+        $input = $_POST['text'] ?? '';
+        if (empty($input)) {
+            // Try reading raw input if not in POST (e.g. JSON body)
+            $rawInput = json_decode(file_get_contents('php://input'), true);
+            $input = $rawInput['text'] ?? '';
+        }
+
+        if (empty($input)) {
+            echo json_encode(['error' => 'No text provided']);
+            exit;
+        }
+
+        $pythonScript = __DIR__ . '/../../src/python/optimizer.py';
+        if (!file_exists($pythonScript)) {
+            echo json_encode(['error' => 'Optimizer script not found']);
+            exit;
+        }
+
+        // Use a temporary file to pass input to avoid shell escaping issues with large text
+        $tempInputFile = tempnam(sys_get_temp_dir(), 'opt_in_');
+        // The python script expects JSON input with a "text" key if reading from file/stdin
+        file_put_contents($tempInputFile, json_encode(['text' => $input]));
+
+        // Execute Python script
+        // We pipe the file content to stdin
+        $command = "type " . escapeshellarg($tempInputFile) . " | python " . escapeshellarg($pythonScript);
+
+        $output = shell_exec($command . " 2>&1");
+
+        unlink($tempInputFile);
+
+        // Try to parse output as JSON
+        $responseData = json_decode($output, true);
+
+        if ($responseData && json_last_error() === JSON_ERROR_NONE) {
+            echo json_encode($responseData);
+        } else {
+            echo json_encode(['error' => 'Raw output: ' . $output]);
+        }
+        exit;
+    }
 }

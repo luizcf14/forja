@@ -27,6 +27,7 @@ $router->get('/agents/download', 'AgentController@download');
 // Test & Chat
 $router->get('/agents/test', 'TestController@index');
 $router->post('/api/chat', 'TestController@chat');
+$router->post('/api/optimize', 'AgentController@optimize');
 
 // Users
 $router->get('/users', 'UserController@index');

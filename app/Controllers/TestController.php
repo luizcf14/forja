@@ -36,6 +36,7 @@ class TestController extends Controller
 
     public function chat()
     {
+        set_time_limit(300); // Increase execution time to 5 minutes
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -73,12 +74,21 @@ class TestController extends Controller
         $tempInputFile = tempnam(sys_get_temp_dir(), 'agent_chat_in_');
         $tempOutputFile = tempnam(sys_get_temp_dir(), 'agent_chat_out_');
 
+        // Prepare knowledge base files list
+        $kbFiles = [];
+        if (!empty($agent['knowledge_base'])) {
+            $kbPath = realpath(__DIR__ . '/../../public/uploads/' . $agent['knowledge_base']);
+            if ($kbPath && file_exists($kbPath)) {
+                $kbFiles[] = $kbPath;
+            }
+        }
+
         $inputData = [
             'agent' => $agent,
             'message' => $message,
             'session_id' => $sessionId,
             'history' => $history,
-            'uploads_dir' => __DIR__ . '/../../public/uploads/'
+            'knowledge_base_files' => $kbFiles
         ];
         file_put_contents($tempInputFile, json_encode($inputData));
 

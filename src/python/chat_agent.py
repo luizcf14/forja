@@ -2,37 +2,57 @@ import sys
 import json
 import os
 import logging
-
+GOOGLE_API_KEY="AIzaSyCO6D8dGvyVw-J_B7HdnJw9u9BsfH_tDUk"
 # Disable Agno debug logs
-os.environ["AGNO_DEBUG"] = "false"
+os.environ["AGNO_DEBUG"] = "true"
 
 # Configure logging to suppress debug output
 logging.basicConfig(level=logging.ERROR)
 logging.getLogger("agno").setLevel(logging.ERROR)
 
 from agno.agent import Agent
-from agno.models.openai import OpenAIChat
+from agno.knowledge.embedder.google import GeminiEmbedder
 from agno.models.google import Gemini
+from agno.knowledge.knowledge import Knowledge
+# from agno.db.sqlite import SqliteDb  # or PostgresDb, etc.
+from agno.db.in_memory import InMemoryDb
+
 # from agno.knowledge.pdf import PDFUrlKnowledgeBase, PDFKnowledgeBase
-# from agno.vectordb.lancedb import LanceDb, SearchType
+from agno.vectordb.lancedb import LanceDb, SearchType
 
 import sys
 import json
-import os
+import os   
 import logging
 
 
-# Configure logging to suppress debug output
-logging.basicConfig(level=logging.ERROR)
-logging.getLogger("agno").setLevel(logging.ERROR)
+import io
+
+# Configure logging to capture debug output
+# Configure logging to capture debug output
+log_capture_string = io.StringIO()
+ch = logging.StreamHandler(log_capture_string)
+ch.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+# Remove existing handlers to avoid duplicates or conflicts
+if root_logger.hasHandlers():
+    root_logger.handlers.clear()
+root_logger.addHandler(ch)
+
+logging.getLogger("agno").setLevel(logging.DEBUG)
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.models.google import Gemini
 # from agno.knowledge.pdf import PDFUrlKnowledgeBase, PDFKnowledgeBase
 # from agno.vectordb.lancedb import LanceDb, SearchType
-
+outString = ""
 def main():
+    logging.debug("Agent starting...")
     if len(sys.argv) < 2:
         print(json.dumps({"error": "Missing input file argument"}))
         return
@@ -40,23 +60,21 @@ def main():
     input_file = sys.argv[1]
     output_file = sys.argv[2] if len(sys.argv) > 2 else None
     
+    logging.debug(f"DEBUG: Input file: {input_file}")
     try:
         with open(input_file, 'r') as f:
             data = json.load(f)
     except Exception as e:
-        err = json.dumps({"error": f"Failed to read input file: {str(e)}"})
-        if output_file:
-            with open(output_file, 'w') as f:
-                f.write(err)
-        else:
-            print(err)
+        print(f"CRITICAL ERROR: {e}")
         return
 
+    
     agent_config = data.get('agent', {})
     message = data.get('message', '')
     session_id = data.get('session_id', '')
     history = data.get('history', [])
-    uploads_dir = data.get('uploads_dir', '')
+    kb_files = data.get('knowledge_base_files', [])
+    
 
     if not message:
         err = json.dumps({"error": "No message provided"})
@@ -67,7 +85,6 @@ def main():
             print(err)
         return
 
-    
     # Determine Model based on Type
     model_id = "gemini-2.5-flash"
     if agent_config.get('type') == 'Slow':
@@ -75,39 +92,72 @@ def main():
 
     # Initialize Knowledge Base if exists
     knowledge_base = None
-    kb_file = agent_config.get('knowledge_base')
-    if kb_file:
-        kb_path = os.path.join(uploads_dir, kb_file)
-        if os.path.exists(kb_path):
-            try:
-                knowledge_base = PDFKnowledgeBase(
-                    path=kb_path,   
-                    vector_db=LanceDb(
-                        table_name="agent_docs",
-                        uri="tmp/lancedb_agent_forge",
-                        search_type=SearchType.hybrid,
-                    ),
-                )
-                knowledge_base.load(recreate=False) 
-            except Exception as e:
-                pass
+    outString = ""
+    logging.debug(f"Received KB files: {kb_files}")
+    if kb_files:
+        try:
+            
+            from agno.knowledge.reader.pdf_reader import PDFReader
+            
+            # Drop table to ensure correct dimensions
+            import lancedb
+            import shutil
+            
+            # Clean up lancedb directory to force fresh start
+            lancedb_path = os.path.abspath("tmp/lancedb_agent_forge")
+            if os.path.exists(lancedb_path):
+                try:
+                    shutil.rmtree(lancedb_path)
+                    logging.debug(f"DEBUG: Removed LanceDB directory: {lancedb_path}")
+                except Exception as e:
+                    logging.error(f"DEBUG: Failed to remove LanceDB directory: {e}")
 
-    # System Prompt
+            vector_db = LanceDb(
+                table_name="agent_docs",
+                uri=lancedb_path,
+                embedder=GeminiEmbedder(id="models/text-embedding-004", api_key=GOOGLE_API_KEY, dimensions=768),
+            )
+            
+            knowledge_base = Knowledge(
+                vector_db=vector_db,
+            )
+            
+            # Add content to Knowledge Base
+            for kb_file in kb_files:
+                try:
+                    kb_path = os.path.abspath(kb_file)
+                    if os.path.exists(kb_path):
+                        logging.debug(f"Adding to KB: {kb_path}")
+                        knowledge_base.add_content(path=kb_path, reader=PDFReader(chunk=True))
+                    else:
+                        logging.warning(f"KB file not found: {kb_path}")
+                except Exception as e:
+                    logging.error(f"Error adding KB file {kb_file}: {e}")
+
+        except Exception as e:
+            # Log error but continue without KB if it fails
+            logging.error(f"KB Error: {e}")
+            pass
+
     system_prompt = agent_config.get('behaviour', 'You are a helpful AI assistant.')
     if agent_config.get('details'):
         system_prompt += f"\n\nAdditional Details:\n{agent_config.get('details')}"
 
     try:
         # Create Agent
-        GOOGLE_API_KEY="AIzaSyCO6D8dGvyVw-J_B7HdnJw9u9BsfH_tDUk"
+        # content_list = knowledge_base.get_content_lists()
+        # for content in content_list:
+             # status, msg = knowledge_base.get_content_status(content.id)
+             # outString += f"{content}\n"
         agent = Agent(
             model=Gemini(id=model_id, api_key=GOOGLE_API_KEY),
             description=system_prompt,
             instructions=[system_prompt],
             knowledge=knowledge_base,
-            debug_mode=True,
+            search_knowledge=True,
+            debug_mode=True,          
             markdown=True,
-            # session_id=session_id, # Agno Agent might not take session_id directly in init without storage
+            session_id=session_id,
         )
 
         # Format history for Agno if needed, or just append to messages
@@ -140,9 +190,16 @@ def main():
             except:
                 metrics_data = str(response.metrics)
 
+        # Log KB files for debugging
+        if kb_files:
+            logging.debug(f"Received KB files: {kb_files}")
+            if outString:
+                logging.debug(f"KB Status:\n{outString}")
+
         result = json.dumps({
             "response": response.content,
             "metrics": metrics_data,
+            "debug_logs": log_capture_string.getvalue(),
             "session_id": session_id
         })
         

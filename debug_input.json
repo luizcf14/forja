@@ -1,13 +1,12 @@
 {
     "agent": {
-        "subject": "Test Agent",
         "type": "Fast",
-        "behaviour": "You are a helpful assistant.",
-        "details": "None",
-        "knowledge_base": ""
+        "behaviour": "You are a helpful assistant."
     },
-    "message": "Hello, are you working?",
-    "session_id": "debug_session_123",
+    "message": "What does the document say?",
+    "session_id": "test_session_kb",
     "history": [],
-    "uploads_dir": "c:\\Users\\luizc\\.gemini\\antigravity\\scratch\\agent_forge\\public\\uploads\\"
+    "knowledge_base_files": [
+        "c:\\Users\\luizc\\.gemini\\antigravity\\scratch\\agent_forge\\test.pdf"
+    ]
 }
