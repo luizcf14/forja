@@ -48,6 +48,7 @@ class AgentController extends Controller
         $type = $_POST['type'] ?? 'Fast';
         $behaviour = $_POST['behaviour'] ?? '';
         $details = $_POST['details'] ?? '';
+        $status = isset($_POST['is_production']) ? 'production' : 'development';
 
         // Handle File Upload
         $knowledgeBase = '';
@@ -73,7 +74,8 @@ class AgentController extends Controller
             'type' => $type,
             'behaviour' => $behaviour,
             'details' => $details,
-            'knowledge_base' => $knowledgeBase
+            'knowledge_base' => $knowledgeBase,
+            'status' => $status
         ]);
 
         if ($agentId) {
@@ -104,6 +106,7 @@ class AgentController extends Controller
         $type = $_POST['type'] ?? 'Fast';
         $behaviour = $_POST['behaviour'] ?? '';
         $details = $_POST['details'] ?? '';
+        $status = isset($_POST['is_production']) ? 'production' : 'development';
 
         // Handle File Upload
         $knowledgeBase = '';
@@ -124,9 +127,9 @@ class AgentController extends Controller
 
         $data = [
             'subject' => $subject,
-            'type' => $type,
             'behaviour' => $behaviour,
-            'details' => $details
+            'details' => $details,
+            'status' => $status
         ];
 
         if ($knowledgeBase) {

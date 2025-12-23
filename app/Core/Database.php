@@ -65,8 +65,8 @@ class Database
 
     public function insertAgent($data)
     {
-        $sql = "INSERT INTO agents (user_id, subject, type, behaviour, details, knowledge_base, created_at) 
-                VALUES (:user_id, :subject, :type, :behaviour, :details, :knowledge_base, :created_at)";
+        $sql = "INSERT INTO agents (user_id, subject, type, behaviour, details, knowledge_base, status, created_at) 
+                VALUES (:user_id, :subject, :type, :behaviour, :details, :knowledge_base, :status, :created_at)";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
@@ -76,6 +76,7 @@ class Database
             ':behaviour' => $data['behaviour'] ?? '',
             ':details' => $data['details'] ?? '',
             ':knowledge_base' => $data['knowledge_base'] ?? '',
+            ':status' => $data['status'] ?? 'development',
             ':created_at' => date('Y-m-d H:i:s')
         ]);
 
@@ -88,7 +89,8 @@ class Database
                 subject = :subject, 
                 type = :type, 
                 behaviour = :behaviour, 
-                details = :details";
+                details = :details,
+                status = :status";
 
         // Only update knowledge_base if a new file was uploaded
         if (!empty($data['knowledge_base'])) {
@@ -104,7 +106,8 @@ class Database
             ':subject' => $data['subject'] ?? '',
             ':type' => $data['type'] ?? '',
             ':behaviour' => $data['behaviour'] ?? '',
-            ':details' => $data['details'] ?? ''
+            ':details' => $data['details'] ?? '',
+            ':status' => $data['status'] ?? 'development'
         ];
 
         if (!empty($data['knowledge_base'])) {

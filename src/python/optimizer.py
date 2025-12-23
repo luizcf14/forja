@@ -13,15 +13,8 @@ except ImportError:
     sys.exit(1)
 
 def optimize_agent_config(input_text):
-    # Initialize the agent
-    # Ensure GOOGLE_API_KEY is set in your environment
-    # api_key = os.getenv("GOOGLE_API_KEY")
-    
-    # if not api_key:
-    #     return "Error: GOOGLE_API_KEY environment variable not set."
-
     agent = Agent(
-        model=Gemini(id="gemini-2.5-flash", api_key=GOOGLE_API_KEY),
+        model=Gemini(id="gemini-2.5-flash"),
         description="You are an expert AI Agent Architect.",
         instructions=[
             "Your goal is to optimize the configuration of other AI agents.",

@@ -25,6 +25,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS agents (
     behaviour TEXT NOT NULL,
     details TEXT,
     knowledge_base TEXT,
+    status TEXT DEFAULT 'development',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 )");

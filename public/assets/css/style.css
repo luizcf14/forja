@@ -720,3 +720,9 @@ small,
     color: var(--primary-color);
 }
 
+
+/* Ensure form text is visible */
+.form-text {
+    color: #a1a1aa !important; /* Zinc 400 */
+}
+

@@ -30,6 +30,14 @@
                             <option value="Slow" <?= ($isEdit && $agent['type'] === 'Slow') ? 'selected' : '' ?>>Lento (Alto Raciocínio)</option>
                         </select>
                     </div>
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_production" name="is_production" value="1" 
+                                <?= ($isEdit && isset($agent['status']) && $agent['status'] === 'production') ? 'checked' : '' ?>>
+                            <label class="form-check-label fw-bold" for="is_production">Habilitar para a Produção</label>
+                        </div>
+                        <div class="form-text">Ative para indicar que este agente está pronto para uso em produção.</div>
+                    </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-bold">Base de Conhecimento</label>
