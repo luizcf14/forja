@@ -1,6 +1,8 @@
 import sys
 import json
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 try:
     from agno.agent import Agent
@@ -14,7 +16,7 @@ def optimize_agent_config(input_text):
     # Initialize the agent
     # Ensure GOOGLE_API_KEY is set in your environment
     # api_key = os.getenv("GOOGLE_API_KEY")
-    GOOGLE_API_KEY="AIzaSyCO6D8dGvyVw-J_B7HdnJw9u9BsfH_tDUk"
+    
     # if not api_key:
     #     return "Error: GOOGLE_API_KEY environment variable not set."
 

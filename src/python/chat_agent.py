@@ -2,9 +2,10 @@ import sys
 import json
 import os
 import logging
-GOOGLE_API_KEY="AIzaSyCO6D8dGvyVw-J_B7HdnJw9u9BsfH_tDUk"
-# Disable Agno debug logs
-os.environ["AGNO_DEBUG"] = "true"
+from dotenv import load_dotenv
+load_dotenv()
+
+
 
 # Configure logging to suppress debug output
 logging.basicConfig(level=logging.ERROR)
@@ -115,7 +116,7 @@ def main():
             vector_db = LanceDb(
                 table_name="agent_docs",
                 uri=lancedb_path,
-                embedder=GeminiEmbedder(id="models/text-embedding-004", api_key=GOOGLE_API_KEY, dimensions=768),
+                embedder=GeminiEmbedder(id="models/text-embedding-004", dimensions=768),
             )
             
             knowledge_base = Knowledge(
@@ -150,7 +151,7 @@ def main():
              # status, msg = knowledge_base.get_content_status(content.id)
              # outString += f"{content}\n"
         agent = Agent(
-            model=Gemini(id=model_id, api_key=GOOGLE_API_KEY),
+            model=Gemini(id=model_id),
             description=system_prompt,
             instructions=[system_prompt],
             knowledge=knowledge_base,
