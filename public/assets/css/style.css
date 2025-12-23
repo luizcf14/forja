@@ -695,3 +695,28 @@ small,
     color: #a1a1aa !important;
     /* Zinc 400 */
 }
+/* Tables */
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-color);
+    --bs-table-border-color: var(--border-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.table > :not(caption) > * > * {
+    background-color: transparent;
+    border-bottom-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.table-hover > tbody > tr:hover > * {
+    --bs-table-accent-bg: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+}
+
+.table thead th {
+    border-bottom: 2px solid var(--border-color);
+    color: var(--primary-color);
+}
+
