@@ -9,7 +9,6 @@ class TestController extends Controller
 
     public function __construct()
     {
-        file_put_contents(__DIR__ . '/../../debug_constr.log', "Constructor reached\n", FILE_APPEND);
         $this->db = new Database();
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -37,7 +36,6 @@ class TestController extends Controller
 
     public function chat()
     {
-        file_put_contents(__DIR__ . '/../../debug_chat.log', "Chat endpoint reached\n", FILE_APPEND);
         set_time_limit(300); // Increase execution time to 5 minutes
         header('Content-Type: application/json');
 

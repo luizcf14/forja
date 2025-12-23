@@ -9,7 +9,7 @@ if (php_sapi_name() == 'cli-server') {
     }
 }
 
-file_put_contents(__DIR__ . '/../debug_index.log', "Index reached: " . $_SERVER['REQUEST_URI'] . "\n", FILE_APPEND);
+
 
 require_once __DIR__ . '/../app/Core/Router.php';
 

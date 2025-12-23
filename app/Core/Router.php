@@ -16,7 +16,6 @@ class Router
 
     public function dispatch($uri, $method)
     {
-        file_put_contents(__DIR__ . '/../../debug_router.log', "URI: $uri, Method: $method\n", FILE_APPEND);
         // Strip query string
         $uri = parse_url($uri, PHP_URL_PATH);
 
