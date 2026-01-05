@@ -23,7 +23,7 @@ Before running the application for the first time, initialize the database:
 1. Open a terminal in the project root.
 2. Run the following command:
    ```bash
-   php -S localhost:8000 -t public
+   php  -c php.ini -S localhost:8000 -t public
    ```
 3. Open your browser and navigate to `http://localhost:8000`.
 

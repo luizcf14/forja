@@ -4,4 +4,4 @@ google-genai
 ddgs 
 lancedb
 pypdf
-env
+envm
