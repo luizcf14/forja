@@ -36,8 +36,18 @@ class Database
             behaviour TEXT,
             details TEXT,
             knowledge_base TEXT,
+            status TEXT DEFAULT 'development',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
+        )");
+
+        // Create Agent Documents Table
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS agent_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agent_id INTEGER NOT NULL,
+            filename TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
         )");
 
         // Seed Admin if not exists
@@ -46,6 +56,21 @@ class Database
         if ($stmt->fetchColumn() == 0) {
             $this->createUser('admin', 'password', 'admin');
         }
+    }
+
+    // --- AGENT DOCUMENTS ---
+
+    public function addAgentDocument($agentId, $filename)
+    {
+        $stmt = $this->pdo->prepare("INSERT INTO agent_documents (agent_id, filename, created_at) VALUES (?, ?, ?)");
+        return $stmt->execute([$agentId, $filename, date('Y-m-d H:i:s')]);
+    }
+
+    public function getAgentDocuments($agentId)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM agent_documents WHERE agent_id = ? ORDER BY id ASC");
+        $stmt->execute([$agentId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // --- AGENTS ---
@@ -115,6 +140,12 @@ class Database
         }
 
         return $stmt->execute($params);
+    }
+
+    public function deleteAgent($id)
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM agents WHERE id = ?");
+        return $stmt->execute([$id]);
     }
 
     // --- USERS ---

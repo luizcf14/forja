@@ -50,35 +50,19 @@ class AgentController extends Controller
         $details = $_POST['details'] ?? '';
         $status = isset($_POST['is_production']) ? 'production' : 'development';
 
-        // Handle File Upload
-        $knowledgeBase = '';
-        if (isset($_FILES['knowledge_base']) && $_FILES['knowledge_base']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../../public/uploads/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-
-            $fileName = basename($_FILES['knowledge_base']['name']);
-            // Basic validation (ensure unique name to avoid overwrite issues in real app)
-            $fileName = time() . '_' . $fileName;
-            $targetPath = $uploadDir . $fileName;
-
-            if (move_uploaded_file($_FILES['knowledge_base']['tmp_name'], $targetPath)) {
-                $knowledgeBase = $fileName;
-            }
-        }
-
         $agentId = $this->db->insertAgent([
             'user_id' => $_SESSION['user_id'] ?? null,
             'subject' => $subject,
             'type' => $type,
             'behaviour' => $behaviour,
             'details' => $details,
-            'knowledge_base' => $knowledgeBase,
+            'knowledge_base' => '', // Legacy, empty for new agents
             'status' => $status
         ]);
 
         if ($agentId) {
+            $this->handleFileUploads($agentId);
+
             if (isset($_POST['save_download'])) {
                 $this->redirect("/agents/download?id=$agentId&download=1");
             } else {
@@ -108,35 +92,16 @@ class AgentController extends Controller
         $details = $_POST['details'] ?? '';
         $status = isset($_POST['is_production']) ? 'production' : 'development';
 
-        // Handle File Upload
-        $knowledgeBase = '';
-        if (isset($_FILES['knowledge_base']) && $_FILES['knowledge_base']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../../public/uploads/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-
-            $fileName = basename($_FILES['knowledge_base']['name']);
-            $fileName = time() . '_' . $fileName;
-            $targetPath = $uploadDir . $fileName;
-
-            if (move_uploaded_file($_FILES['knowledge_base']['tmp_name'], $targetPath)) {
-                $knowledgeBase = $fileName;
-            }
-        }
-
         $data = [
             'subject' => $subject,
+            'type' => $type,
             'behaviour' => $behaviour,
             'details' => $details,
             'status' => $status
         ];
 
-        if ($knowledgeBase) {
-            $data['knowledge_base'] = $knowledgeBase;
-        }
-
         $this->db->updateAgent($id, $data);
+        $this->handleFileUploads($id);
 
         if (isset($_POST['save_download'])) {
             $this->redirect("/agents/download?id=$id&download=1");
@@ -144,6 +109,80 @@ class AgentController extends Controller
             $_SESSION['success_message'] = "Agente atualizado com sucesso!";
             $this->redirect('/');
         }
+    }
+
+    private function handleFileUploads($agentId)
+    {
+        if (isset($_FILES['knowledge_base'])) {
+            $files = $_FILES['knowledge_base'];
+            $uploadDir = __DIR__ . '/../../public/uploads/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            // Normalize files array
+            $fileCount = is_array($files['name']) ? count($files['name']) : 1;
+            
+            for ($i = 0; $i < $fileCount; $i++) {
+                $error = is_array($files['error']) ? $files['error'][$i] : $files['error'];
+                if ($error === UPLOAD_ERR_OK) {
+                    $tmpName = is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
+                    $name = is_array($files['name']) ? $files['name'][$i] : $files['name'];
+                    
+                    $fileName = basename($name);
+                    $fileName = time() . '_' . $i . '_' . $fileName; // Unique name
+                    $targetPath = $uploadDir . $fileName;
+
+                    if (move_uploaded_file($tmpName, $targetPath)) {
+                        $this->db->addAgentDocument($agentId, $fileName);
+                    }
+                }
+            }
+        }
+    }
+
+    public function delete()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/');
+        }
+
+        $id = $_POST['id'] ?? null;
+        if (!$id) {
+            $this->redirect('/');
+        }
+
+        // Fetch agent and documents to delete files
+        $agent = $this->db->getAgentById($id);
+        if (!$agent) {
+             $this->redirect('/');
+        }
+
+        // Delete documents from uploads
+        $docs = $this->db->getAgentDocuments($id);
+        $uploadDir = __DIR__ . '/../../public/uploads/';
+        foreach ($docs as $doc) {
+            $filePath = $uploadDir . $doc['filename'];
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+        }
+        
+        // Delete legacy knowledge_base file if exists and not in docs
+        if (!empty($agent['knowledge_base'])) {
+             $filePath = $uploadDir . $agent['knowledge_base'];
+             if (file_exists($filePath)) {
+                unlink($filePath);
+             }
+        }
+
+        if ($this->db->deleteAgent($id)) {
+            $_SESSION['success_message'] = "Agente excluído com sucesso!";
+        } else {
+             // Handle error
+        }
+        
+        $this->redirect('/');
     }
 
     public function download()

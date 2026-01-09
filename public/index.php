@@ -11,6 +11,11 @@ if (php_sapi_name() == 'cli-server') {
 
 
 
+// Increase upload limits at runtime
+ini_set('upload_max_filesize', '100M');
+ini_set('post_max_size', '100M');
+ini_set('memory_limit', '512M');
+
 require_once __DIR__ . '/../app/Core/Router.php';
 
 $router = new Router();
@@ -24,6 +29,7 @@ $router->get('/agents/create', 'AgentController@create');
 $router->post('/agents/store', 'AgentController@store');
 $router->get('/agents/edit', 'AgentController@edit');
 $router->post('/agents/update', 'AgentController@update');
+$router->post('/agents/delete', 'AgentController@delete');
 $router->get('/agents/download', 'AgentController@download');
 
 // Test & Chat

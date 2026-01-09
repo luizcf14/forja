@@ -24,12 +24,22 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS agents (
     type TEXT NOT NULL,
     behaviour TEXT NOT NULL,
     details TEXT,
-    knowledge_base TEXT,
+    knowledge_base TEXT, -- Legacy column, kept for backward compatibility
     status TEXT DEFAULT 'development',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 )");
 echo "Table 'agents' checked/created.\n";
+
+// Create Agent Documents Table
+$pdo->exec("CREATE TABLE IF NOT EXISTS agent_documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+)");
+echo "Table 'agent_documents' checked/created.\n";
 
 // Seed Admin User
 $adminUser = 'luizcf14';

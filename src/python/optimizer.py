@@ -14,7 +14,7 @@ except ImportError:
 
 def optimize_agent_config(input_text):
     agent = Agent(
-        model=Gemini(id="gemini-2.5-flash"),
+        model=Gemini(top_k=1,top_p=0.9,id="gemini-2.5-flash"),
         description="You are an expert AI Agent Architect.",
         instructions=[
             "Your goal is to optimize the configuration of other AI agents.",

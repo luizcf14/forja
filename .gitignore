@@ -8,3 +8,4 @@ node_modules/
 *.log
 *.sqlite
 public/uploads/
+lancedb_data/

@@ -41,16 +41,26 @@
 
                     <div class="mb-4">
                         <label class="form-label fw-bold">Base de Conhecimento</label>
-                        <input type="file" name="knowledge_base" class="form-control" accept=".pdf,.html">
-                        <div class="form-text">Envie documentos PDF ou HTML para contexto.</div>
-                        <?php if ($isEdit && !empty($agent['knowledge_base'])): ?>
-                            <div class="mt-2">
-                                <span class="text-muted">Arquivo atual:</span>
-                                <a href="/uploads/<?= htmlspecialchars($agent['knowledge_base']) ?>" target="_blank">
-                                    <?= htmlspecialchars($agent['knowledge_base']) ?>
-                                </a>
-                            </div>
-                        <?php endif; ?>
+                        <input type="file" name="knowledge_base[]" class="form-control" accept=".pdf,.html" multiple>
+                        <div class="form-text">Envie um ou mais documentos PDF ou HTML para contexto.</div>
+                        
+                        <?php 
+                        // Fetch existing documents if in edit mode
+                        if ($isEdit) {
+                            $db = new Database(); // Or pass from controller
+                            $docs = $db->getAgentDocuments($agent['id']);
+                            if (!empty($docs)) {
+                                echo '<div class="mt-2"><span class="text-muted">Arquivos atuais:</span><ul class="list-unstyled">';
+                                foreach ($docs as $doc) {
+                                    echo '<li><a href="/uploads/' . htmlspecialchars($doc['filename']) . '" target="_blank">' . htmlspecialchars($doc['filename']) . '</a></li>';
+                                }
+                                echo '</ul></div>';
+                            } elseif (!empty($agent['knowledge_base'])) {
+                                // Legacy check
+                                echo '<div class="mt-2"><span class="text-muted">Arquivo atual (Legacy):</span> <a href="/uploads/' . htmlspecialchars($agent['knowledge_base']) . '" target="_blank">' . htmlspecialchars($agent['knowledge_base']) . '</a></div>';
+                            }
+                        }
+                        ?>
                     </div>
 
                     <div class="mb-4">
@@ -72,15 +82,57 @@
                             placeholder="Quaisquer instruções ou restrições específicas..."><?= $isEdit ? htmlspecialchars($agent['details']) : '' ?></textarea>
                     </div>
 
-                    <div class="d-grid gap-2 pt-3 d-md-flex justify-content-md-end">
-                        <button type="submit" name="save_agent" class="btn btn-secondary btn-lg me-md-2">
-                            <i class="bi bi-save"></i> Salvar Agente
+                </form>
+
+                <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-4">
+                    <!-- Left Side: Delete Button -->
+                    <div>
+                        <?php if ($isEdit): ?>
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="bi bi-trash"></i> Excluir Agente
+                            </button>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Right Side: Save Buttons -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="save_agent" form="agentForm" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-save"></i> Salvar
                         </button>
-                        <button type="submit" name="save_download" class="btn btn-primary btn-lg">
+                        <button type="submit" name="save_download" form="agentForm" class="btn btn-primary btn-lg">
                             <i class="bi bi-download"></i> Salvar e Baixar
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<?php if ($isEdit): ?>
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #27272a; border: 1px solid #3f3f46; color: #ffffff;">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-danger" id="deleteModalLabel">Excluir Agente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-bold mb-2">Tem certeza que deseja excluir o agente "<?= htmlspecialchars($agent['subject']) ?>"?</p>
+                <p class="text-secondary small mb-0">Esta ação é irreversível. Todos os documentos associados também serão removidos permanentemente.</p>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="/agents/delete" method="POST">
+                    <input type="hidden" name="id" value="<?= $agent['id'] ?>">
+                    <button type="submit" class="btn btn-danger">Sim, Excluir</button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
             </div>
         </div>
     </div>
