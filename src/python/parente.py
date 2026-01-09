@@ -205,12 +205,12 @@ def main():
     print(f"Searching for database at: {DB_PATH}")
     loaded_agents = load_agents()
 
-team = Team(
-    role="Seu nome é Parente, voce é responsavel por responder as perguntas dos usuarios, da forma mais simples e direta possivel, redirecionando as perguntas ou partes dela para os membros do time. Sempre tente sumarizar as respostas",
-    members=loaded_agents,
-    model=Gemini(id="gemini-2.5-flash"),
-    respond_directly=False,
-    markdown=True)
+    team = Team(
+        role="Seu nome é Parente, voce é responsavel por responder as perguntas dos usuarios, da forma mais simples e direta possivel, redirecionando as perguntas ou partes dela para os membros do time. Sempre tente sumarizar as respostas",
+        members=loaded_agents,
+        model=Gemini(id="gemini-2.5-flash"),
+        respond_directly=False,
+        markdown=True)
     print("\n--- Team Chat (type 'exit' to quit) ---")
     while True:
         try:
