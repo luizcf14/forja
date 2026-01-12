@@ -19,6 +19,7 @@ try:
     from agno.knowledge.knowledge import Knowledge
     from agno.vectordb.lancedb import LanceDb, SearchType
     from agno.team import Team
+    from agno.os.interfaces.whatsapp import Whatsapp
     
     # Try importing readers, handle if they are missing or moved
     try:
@@ -211,6 +212,14 @@ def main():
         model=Gemini(id="gemini-2.5-flash"),
         respond_directly=False,
         markdown=True)
+
+
+    agent_os = AgentOS(
+        teams=[team],
+        interfaces=[Whatsapp(agent=team)],
+    )
+    app = agent_os.get_app()
+    agent_os.serve(app="basic:app", port=8000, reload=True)
     print("\n--- Team Chat (type 'exit' to quit) ---")
     while True:
         try:
