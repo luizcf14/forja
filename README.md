@@ -29,3 +29,6 @@ Before running the application for the first time, initialize the database:
 
 ### Windows Helper
 You can also simply double-click the `start.bat` file to run the server.
+
+### Python Runner
+uvicorn parente:main

@@ -82,14 +82,14 @@ def load_knowledge_base(kb_path_str: str) -> Optional[Any]:
         
         if kb_path.suffix.lower() == '.pdf':
             if PDFReader:
-                knowledge_base.add_content(path=str(kb_path), reader=PDFReader(chunk=True))
+                knowledge_base.add_content(skip_if_exists=True,path=str(kb_path), reader=PDFReader(chunk=True))
                 return knowledge_base
             else:
                 print("Warning: PDFReader not available.")
                 return None
         elif kb_path.suffix.lower() in ['.txt', '.md','.html']:
             if TextReader:
-                knowledge_base.add_content(path=str(kb_path), reader=TextReader(chunk=True))
+                knowledge_base.add_content(skip_if_exists=True,path=str(kb_path), reader=TextReader(chunk=True))
                 return knowledge_base
             else:
                 # Fallback if TextReader missing: just try adding without reader or skip
@@ -220,17 +220,17 @@ def main():
         interfaces=[Whatsapp(team=team)],
     )
     app = agent_os.get_app()
-    agent_os.serve(app="basic:app", port=8000, reload=True)
-    print("\n--- Team Chat (type 'exit' to quit) ---")
-    while True:
-        try:
-            user_input = input("User: ")
-            if user_input.lower() in ['exit', 'quit']:
-                break
-            team.print_response(user_input, stream=True)
-        except KeyboardInterrupt:
-            break
-        except Exception as e:
-            print(f"Error: {e}")
+    agent_os.serve(app="parente:main",host="0.0.0.0", port=8001, reload=True)
+    # print("\n--- Team Chat (type 'exit' to quit) ---")
+    # while True:
+    #     try:
+    #         user_input = input("User: ")
+    #         if user_input.lower() in ['exit', 'quit']:
+    #             break
+    #         team.print_response(user_input, stream=True)
+    #     except KeyboardInterrupt:
+    #         break
+    #     except Exception as e:
+    #         print(f"Error: {e}")
 if __name__ == "__main__":
     main()

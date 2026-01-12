@@ -6,3 +6,5 @@ lancedb
 pypdf
 pylance
 envm
+tantivy
+fast-api
