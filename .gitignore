@@ -1,4 +1,6 @@
 tmp/
+.venv/
+src/python/.venv/
 __pycache__/
 *.pyc
 vendor/

@@ -19,6 +19,7 @@ try:
     from agno.knowledge.knowledge import Knowledge
     from agno.vectordb.lancedb import LanceDb, SearchType
     from agno.team import Team
+    from agno.os import AgentOS
     from agno.os.interfaces.whatsapp import Whatsapp
     
     # Try importing readers, handle if they are missing or moved
@@ -207,7 +208,7 @@ def main():
     loaded_agents = load_agents()
 
     team = Team(
-        role="Seu nome é Parente, voce é responsavel por responder as perguntas dos usuarios, da forma mais simples e direta possivel, redirecionando as perguntas ou partes dela para os membros do time. Sempre tente sumarizar as respostas",
+        role="Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas dos usuarios, da forma mais simples e direta possivel, redirecionando as perguntas ou partes dela para os membros do time. Sempre tente sumarizar as respostas",
         members=loaded_agents,
         model=Gemini(id="gemini-2.5-flash"),
         respond_directly=False,
@@ -216,7 +217,7 @@ def main():
 
     agent_os = AgentOS(
         teams=[team],
-        interfaces=[Whatsapp(agent=team)],
+        interfaces=[Whatsapp(team=team)],
     )
     app = agent_os.get_app()
     agent_os.serve(app="basic:app", port=8000, reload=True)
