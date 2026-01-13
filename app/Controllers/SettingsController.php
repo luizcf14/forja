@@ -76,17 +76,20 @@ class SettingsController extends Controller
                 } else {
                     $error = "Falha ao parar o serviço ou serviço não estava rodando.";
                 }
+            } elseif (isset($_POST['restart_service'])) {
+                $this->stopParenteService(); // Try to stop, ignore result (start fresh)
+                sleep(1); // Give it a moment to release resources
+                $pid = $this->startParenteService();
+                if ($pid) {
+                    $message = "Serviço reiniciado com sucesso. Novo PID: $pid";
+                } else {
+                    $error = "Falha ao reiniciar o serviço.";
+                }
             }
         }
 
-        // Handle Delete User (logic mostly for GET if we keep the link style, 
-        // but better to move to POST for security. Keeping GET for compatibility with previous view style for now)
-        if (isset($_GET['delete'])) {
-            if ($this->db->deleteUser($_GET['delete'])) {
-                $message = "Usuário excluído com sucesso.";
-            } else {
-                $error = "Não foi possível excluir o usuário (Admin não pode ser excluído).";
-            }
+        if (isset($gitOutput) && !empty($gitOutput)) {
+             // Keep git output logic... or cleaner: 
         }
 
         $users = $this->db->getAllUsers();
@@ -99,14 +102,32 @@ class SettingsController extends Controller
             $servicePid = null;
         }
 
+        $serviceLogs = $this->getServiceLogs();
+
         $this->view('settings/index', [
             'users' => $users, 
             'message' => $message, 
             'error' => $error,
             'gitOutput' => $gitOutput,
             'servicePid' => $servicePid,
-            'isServiceRunning' => $isServiceRunning
+            'isServiceRunning' => $isServiceRunning,
+            'serviceLogs' => $serviceLogs
         ]);
+    }
+
+    private function getServiceLogs($lines = 50)
+    {
+        $logFile = realpath(__DIR__ . '/../../') . '/storage/logs/parente.log';
+        if (!file_exists($logFile)) {
+            return "Arquivo de log não encontrado ou vazio.";
+        }
+
+        // Simple tail implementation
+        $data = file($logFile);
+        if (!$data) return "Log vazio.";
+        
+        $lines = array_slice($data, -$lines);
+        return implode("", $lines);
     }
 
     private function startParenteService()
@@ -114,15 +135,23 @@ class SettingsController extends Controller
         $projectRoot = realpath(__DIR__ . '/../../');
         $scriptPath = $projectRoot . '/src/python/parente.py';
         
+        // Ensure log directory exists
+        $logDir = $projectRoot . '/storage/logs';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0777, true);
+        }
+        $logFile = $logDir . '/parente.log';
+        
         if (PHP_OS_FAMILY === 'Windows') {
-            $command = "powershell -Command \"Start-Process python -ArgumentList '$scriptPath' -PassThru -NoNewWindow | Select-Object -ExpandProperty Id\"";
+            // PowerShell: -RedirectStandardOutput and -RedirectStandardError
+            // Note: Start-Process with redirection works well.
+            $command = "powershell -Command \"Start-Process python -ArgumentList '$scriptPath' -RedirectStandardOutput '$logFile' -RedirectStandardError '$logFile' -PassThru -NoNewWindow | Select-Object -ExpandProperty Id\"";
             $output = shell_exec($command);
             $pid = trim($output);
         } else {
             // Linux/Unix implementation
-            // Use nohup to run in background, redirect output to /dev/null (or a log file if preferred)
-            // echo $! prints the PID of the last background command
-            $command = "nohup python3 " . escapeshellarg($scriptPath) . " > /dev/null 2>&1 & echo $!";
+            // Redirect both stdout and stderr to log file
+            $command = "nohup python3 " . escapeshellarg($scriptPath) . " >> " . escapeshellarg($logFile) . " 2>&1 & echo $!";
             $output = [];
             exec($command, $output);
             $pid = isset($output[0]) ? trim($output[0]) : false;

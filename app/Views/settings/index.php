@@ -126,8 +126,11 @@
                     </div>
                     <form method="POST">
                         <?php if ($isServiceRunning): ?>
-                            <button type="submit" name="stop_service" class="btn btn-danger btn-sm">
+                            <button type="submit" name="stop_service" class="btn btn-danger btn-sm me-2">
                                 <i class="bi bi-stop-circle"></i> Parar
+                            </button>
+                            <button type="submit" name="restart_service" class="btn btn-warning btn-sm">
+                                <i class="bi bi-arrow-clockwise"></i> Reiniciar
                             </button>
                         <?php else: ?>
                             <button type="submit" name="start_service" class="btn btn-success btn-sm">
