@@ -139,6 +139,16 @@
                         <?php endif; ?>
                     </form>
                 </div>
+
+                <hr class="my-4">
+
+                <h6 class="fw-bold">Logs de Execução</h6>
+                <div class="bg-black text-white p-2 rounded border border-secondary font-monospace small" style="max-height: 300px; overflow-y: auto;">
+                    <pre class="m-0" id="serviceLogs"><?= htmlspecialchars($serviceLogs ?? 'Nenhum log disponível.') ?></pre>
+                </div>
+                <div class="text-end mt-1">
+                    <a href="" class="btn btn-link btn-sm text-decoration-none text-info"><i class="bi bi-arrow-clockwise"></i> Atualizar Logs</a>
+                </div>
             </div>
         </div>
     </div>
