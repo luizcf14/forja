@@ -203,24 +203,22 @@ def load_agents() -> List[Agent]:
 
     return agents
 
-def main():
-    print(f"Searching for database at: {DB_PATH}")
-    loaded_agents = load_agents()
 
-    team = Team(
-        role="Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas dos usuarios, da forma mais simples e direta possivel, redirecionando as perguntas ou partes dela para os membros do time. Sempre tente sumarizar as respostas",
-        members=loaded_agents,
-        model=Gemini(id="gemini-2.5-flash"),
-        respond_directly=False,
-        markdown=True)
+print(f"Searching for database at: {DB_PATH}")
+loaded_agents = load_agents()
 
+team = Team(
+    role="Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas dos usuarios, da forma mais simples e direta possivel, redirecionando as perguntas ou partes dela para os membros do time. Sempre tente sumarizar as respostas",
+    members=loaded_agents,
+    model=Gemini(id="gemini-2.5-flash"),
+    respond_directly=False,
+    markdown=True)
 
-    agent_os = AgentOS(
-        teams=[team],
-        interfaces=[Whatsapp(team=team)],
-    )
-    app = agent_os.get_app()
-    
-  
+agent_os = AgentOS(
+    teams=[team],
+    interfaces=[Whatsapp(team=[team])],
+)
+app = agent_os.get_app()
+
 if __name__ == "__main__":
-    agent_os.serve(app="parente:main",host="0.0.0.0", port=8001, reload=True)
+    agent_os.serve(app="parente:app", host="0.0.0.0", port=3000, reload=True)

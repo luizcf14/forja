@@ -8,3 +8,4 @@ pylance
 envm
 tantivy
 fast-api
+pandas
