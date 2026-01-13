@@ -102,9 +102,7 @@
                         <button type="submit" name="save_agent" form="agentForm" class="btn btn-secondary btn-lg">
                             <i class="bi bi-save"></i> Salvar
                         </button>
-                        <button type="submit" name="save_download" form="agentForm" class="btn btn-primary btn-lg">
-                            <i class="bi bi-download"></i> Salvar e Baixar
-                        </button>
+
                     </div>
                 </div>
             </div>

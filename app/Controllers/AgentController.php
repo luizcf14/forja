@@ -63,12 +63,8 @@ class AgentController extends Controller
         if ($agentId) {
             $this->handleFileUploads($agentId);
 
-            if (isset($_POST['save_download'])) {
-                $this->redirect("/agents/download?id=$agentId&download=1");
-            } else {
-                $_SESSION['success_message'] = "Agente criado com sucesso!";
-                $this->redirect('/');
-            }
+            $_SESSION['success_message'] = "Agente criado com sucesso!";
+            $this->redirect('/');
         } else {
             // Handle error
             $this->view('agents/form', ['error' => 'Failed to create agent', 'isEdit' => false]);
@@ -103,12 +99,8 @@ class AgentController extends Controller
         $this->db->updateAgent($id, $data);
         $this->handleFileUploads($id);
 
-        if (isset($_POST['save_download'])) {
-            $this->redirect("/agents/download?id=$id&download=1");
-        } else {
-            $_SESSION['success_message'] = "Agente atualizado com sucesso!";
-            $this->redirect('/');
-        }
+        $_SESSION['success_message'] = "Agente atualizado com sucesso!";
+        $this->redirect('/');
     }
 
     private function handleFileUploads($agentId)
