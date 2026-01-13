@@ -103,13 +103,39 @@
                     <button type="submit" name="git_pull" class="btn btn-dark w-100 mb-3">
                         <i class="bi bi-git"></i> Git Pull (Origin Main)
                     </button>
+                    <!-- Display Git Output -->
+                    <?php if (!empty($gitOutput)): ?>
+                        <div class="bg-black text-success p-2 rounded small font-monospace overflow-auto" style="max-height: 200px;">
+                            <pre class="m-0"><?= htmlspecialchars($gitOutput) ?></pre>
+                        </div>
+                    <?php endif; ?>
                 </form>
 
-                <?php if (isset($gitOutput) && !empty($gitOutput)): ?>
-                    <div class="bg-light p-2 rounded border font-monospace small" style="max-height: 200px; overflow-y: auto;">
-                        <pre class="mb-0"><?= htmlspecialchars($gitOutput) ?></pre>
+                <hr class="my-4">
+
+                <h6 class="fw-bold">Serviço Parente IA</h6>
+                <div class="d-flex align-items-center justify-content-between mb-3 p-3 border rounded <?= $isServiceRunning ? 'border-success bg-secondary bg-opacity-25' : 'border-secondary bg-dark' ?>">
+                    <div class="<?= $isServiceRunning ? 'text-white' : 'text-light' ?>">
+                        <strong>Status:</strong> 
+                        <span class="badge <?= $isServiceRunning ? 'bg-success' : 'bg-secondary' ?>">
+                            <?= $isServiceRunning ? 'EXECUTANDO' : 'PARADO' ?>
+                        </span>
+                        <?php if ($isServiceRunning): ?>
+                            <div class="small text-white-50 mt-1">PID: <?= $servicePid ?></div>
+                        <?php endif; ?>
                     </div>
-                <?php endif; ?>
+                    <form method="POST">
+                        <?php if ($isServiceRunning): ?>
+                            <button type="submit" name="stop_service" class="btn btn-danger btn-sm">
+                                <i class="bi bi-stop-circle"></i> Parar
+                            </button>
+                        <?php else: ?>
+                            <button type="submit" name="start_service" class="btn btn-success btn-sm">
+                                <i class="bi bi-play-circle"></i> Iniciar
+                            </button>
+                        <?php endif; ?>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

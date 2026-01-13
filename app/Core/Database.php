@@ -73,6 +73,30 @@ class Database
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
         )");
+
+        // Create Settings Table (Key-Value Store)
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS system_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
+    }
+
+    // --- SYSTEM SETTINGS ---
+
+    public function getSetting($key)
+    {
+        $stmt = $this->pdo->prepare("SELECT value FROM system_settings WHERE key = ?");
+        $stmt->execute([$key]);
+        return $stmt->fetchColumn();
+    }
+
+    public function setSetting($key, $value)
+    {
+        $sql = "INSERT INTO system_settings (key, value, updated_at) VALUES (:key, :value, CURRENT_TIMESTAMP)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([':key' => $key, ':value' => $value]);
     }
 
     // --- CONVERSATIONS ---
