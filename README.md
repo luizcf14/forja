@@ -31,4 +31,4 @@ Before running the application for the first time, initialize the database:
 You can also simply double-click the `start.bat` file to run the server.
 
 ### Python Runner
-uvicorn parente:main
+uvicorn parente:app --host 0.0.0.0 --port 3000 --reload

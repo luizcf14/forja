@@ -1,5 +1,7 @@
 tmp/
 .venv/
+database.sqlite
+database.json
 src/python/.venv/
 __pycache__/
 *.pyc

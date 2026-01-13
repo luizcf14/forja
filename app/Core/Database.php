@@ -73,6 +73,19 @@ class Database
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getAgentDocumentById($id)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM agent_documents WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function deleteAgentDocument($id)
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM agent_documents WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
     // --- AGENTS ---
 
     public function getAllAgents()

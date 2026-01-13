@@ -50,9 +50,12 @@
                             $db = new Database(); // Or pass from controller
                             $docs = $db->getAgentDocuments($agent['id']);
                             if (!empty($docs)) {
-                                echo '<div class="mt-2"><span class="text-muted">Arquivos atuais:</span><ul class="list-unstyled">';
+                                echo '<div class="mt-2"><span class="text-muted">Arquivos atuais:</span><ul class="list-unstyled" id="fileList">';
                                 foreach ($docs as $doc) {
-                                    echo '<li><a href="/uploads/' . htmlspecialchars($doc['filename']) . '" target="_blank">' . htmlspecialchars($doc['filename']) . '</a></li>';
+                                    echo '<li class="d-flex align-items-center mb-1" id="doc-' . $doc['id'] . '">';
+                                    echo '<a href="/uploads/' . htmlspecialchars($doc['filename']) . '" target="_blank" class="me-2">' . htmlspecialchars($doc['filename']) . '</a>';
+                                    echo '<button type="button" class="btn btn-sm btn-outline-danger border-0 py-0 px-1 delete-file-btn" data-id="' . $doc['id'] . '" title="Remover arquivo"><i class="bi bi-x-lg"></i></button>';
+                                    echo '</li>';
                                 }
                                 echo '</ul></div>';
                             } elseif (!empty($agent['knowledge_base'])) {
@@ -173,6 +176,46 @@
                 },
                 complete: function () {
                     btn.prop('disabled', false).text(originalText);
+                }
+            });
+        });
+
+        // File Deletion Handler
+        $('.delete-file-btn').click(function() {
+            if (!confirm('Tem certeza que deseja remover este arquivo?')) {
+                return;
+            }
+
+            const btn = $(this);
+            const docId = btn.data('id');
+            const listItem = $('#doc-' + docId);
+
+            btn.prop('disabled', true);
+
+            $.ajax({
+                url: '/agents/delete-file',
+                method: 'POST',
+                data: { id: docId },
+                success: function(response) {
+                    // Try parse if string
+                    const res = typeof response === 'string' ? JSON.parse(response) : response;
+                    
+                    if (res.success) {
+                        listItem.fadeOut(300, function() {
+                            $(this).remove();
+                            // If list is empty, maybe remove the header too?
+                            if ($('#fileList li').length === 0) {
+                                $('#fileList').parent().remove();
+                            }
+                        });
+                    } else {
+                        alert('Erro ao excluir: ' + (res.error || 'Erro desconhecido'));
+                        btn.prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    alert('Erro de conexão ao tentar excluir o arquivo.');
+                    btn.prop('disabled', false);
                 }
             });
         });

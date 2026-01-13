@@ -30,6 +30,7 @@ $router->post('/agents/store', 'AgentController@store');
 $router->get('/agents/edit', 'AgentController@edit');
 $router->post('/agents/update', 'AgentController@update');
 $router->post('/agents/delete', 'AgentController@delete');
+$router->post('/agents/delete-file', 'AgentController@deleteFile');
 $router->get('/agents/download', 'AgentController@download');
 
 // Test & Chat
@@ -37,9 +38,9 @@ $router->get('/agents/test', 'TestController@index');
 $router->post('/api/chat', 'TestController@chat');
 $router->post('/api/optimize', 'AgentController@optimize');
 
-// Users
-$router->get('/users', 'UserController@index');
-$router->post('/users', 'UserController@index');
+// Settings & Users
+$router->get('/settings', 'SettingsController@index');
+$router->post('/settings', 'SettingsController@index');
 
 // Dispatch
 $uri = $_SERVER['REQUEST_URI'];
