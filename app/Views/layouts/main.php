@@ -21,6 +21,7 @@
             <?php if (isset($_SESSION['user'])): ?>
                 <div class="d-flex align-items-center">
                     <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                        <a href="/conversations" class="btn btn-outline-info btn-sm me-2">Conversas</a>
                         <a href="/settings" class="btn btn-outline-primary btn-sm me-2">Configurações</a>
                     <?php endif; ?>
                     <span class="text-muted me-3 d-none d-md-block">Bem-vindo,

@@ -204,10 +204,90 @@ def load_agents() -> List[Agent]:
     return agents
 
 
+    return agents
+
+
+class LoggingTeam(Team):
+    def log_message(self, user_id: str, sender: str, content: str):
+        conn = get_db_connection()
+        if not conn:
+            return
+
+        try:
+            cursor = conn.cursor()
+            
+            # 1. Get or Create Conversation
+            cursor.execute("SELECT id FROM conversations WHERE user_id = ?", (user_id,))
+            row = cursor.fetchone()
+            
+            if row:
+                conversation_id = row['id']
+                # Update timestamp
+                cursor.execute("UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?", (conversation_id,))
+            else:
+                cursor.execute("INSERT INTO conversations (user_id) VALUES (?)", (user_id,))
+                conversation_id = cursor.lastrowid
+            
+            # 2. Insert Message
+            cursor.execute(
+                "INSERT INTO messages (conversation_id, sender, content) VALUES (?, ?, ?)",
+                (conversation_id, sender, content)
+            )
+            
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error logging message: {e}")
+        finally:
+            conn.close()
+
+    def run(self, input: Any = None, *args, **kwargs) -> Any:
+        # Extract Session ID (User Number)
+        # In Agno/WebApp, session_id is often passed or we need to check kwargs/input structure
+        # Input for Whatsapp might be a dict or message object depending on implementation details identified.
+        # Based on typical usage, input might contain the message, and session_id is in kwargs or extractable.
+        
+        session_id = kwargs.get("session_id")
+        
+        # If input is a Message object or similar, try to convert to string for logging
+        user_message = str(input)
+        
+        if session_id:
+             self.log_message(session_id, "user", user_message)
+        
+        # Execute original run
+        response = super().run(input=input, *args, **kwargs)
+        
+        # Extract and log response
+        # Response typically is a RunResponse object or iterator. 
+        # For serve(), it might be different. We need to be careful with streams.
+        # super().run returns a RunResponse which has content.
+        
+        if session_id and response:
+             agent_message = str(response.content)
+             self.log_message(session_id, "agent", agent_message)
+             
+        return response
+
+    async def arun(self, input: Any = None, *args, **kwargs) -> Any:
+        # Async version
+        session_id = kwargs.get("session_id")
+        user_message = str(input)
+        
+        if session_id:
+             self.log_message(session_id, "user", user_message)
+
+        response = await super().arun(input=input, *args, **kwargs)
+        
+        if session_id and response:
+             agent_message = str(response.content)
+             self.log_message(session_id, "agent", agent_message)
+             
+        return response
+
 print(f"Searching for database at: {DB_PATH}")
 loaded_agents = load_agents()
 
-team = Team(
+team = LoggingTeam(
     add_history_to_context=True,
     role="""Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas 
     dos usuarios, da forma mais simples e direta possivel, coorden as perguntas ou partes dela para os 

@@ -56,6 +56,52 @@ class Database
         if ($stmt->fetchColumn() == 0) {
             $this->createUser('admin', 'password', 'admin');
         }
+
+        // Create Conversations Table
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT UNIQUE NOT NULL,
+            last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        // Create Messages Table
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL,
+            sender TEXT NOT NULL, -- 'user' or 'agent'
+            content TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+        )");
+    }
+
+    // --- CONVERSATIONS ---
+
+    public function getConversations()
+    {
+        $stmt = $this->pdo->query("SELECT * FROM conversations ORDER BY last_message_at DESC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getConversationById($id)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM conversations WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getConversationByUserId($userId)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM conversations WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getMessages($conversationId)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC");
+        $stmt->execute([$conversationId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // --- AGENT DOCUMENTS ---

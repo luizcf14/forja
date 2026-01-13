@@ -42,6 +42,10 @@ $router->post('/api/optimize', 'AgentController@optimize');
 $router->get('/settings', 'SettingsController@index');
 $router->post('/settings', 'SettingsController@index');
 
+// Conversations
+$router->get('/conversations', 'ConversationController@index');
+$router->get('/conversations/show', 'ConversationController@show');
+
 // Dispatch
 $uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];

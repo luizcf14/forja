@@ -47,7 +47,7 @@ class SettingsController extends Controller
             $returnVar = 0;
             // Execute git pull. 2>&1 redirects stderr to stdout to capture errors.
             // Ensure git is in PATH or use absolute path.
-            exec('git pull origin main 2>&1', $output, $returnVar);
+            exec('git pull 2>&1', $output, $returnVar);
             
             $gitOutput = implode("\n", $output);
             
