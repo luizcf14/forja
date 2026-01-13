@@ -74,11 +74,82 @@
 </div>
 
 <script>
+    const conversationId = <?= $conversation['id'] ?>;
+    let lastMessageId = <?= !empty($messages) ? end($messages)['id'] : 0 ?>;
+    const chatBody = document.querySelector('.card-body');
+
     // Scroll to bottom on load
     window.onload = function() {
-        const chatBody = document.querySelector('.card-body');
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
         chatBody.scrollTop = chatBody.scrollHeight;
     }
+
+    function appendMessage(msg) {
+        const isAgent = msg.sender === 'agent';
+        const alignClass = isAgent ? 'align-self-start' : 'align-self-end';
+        // Match PHP dark theme colors
+        const bubbleStyle = isAgent 
+            ? "border-top-left-radius: 0; background-color: #202c33; color: #e9edef;" 
+            : "border-top-right-radius: 0; background-color: #005c4b; color: #e9edef;";
+        
+        const checkIcon = !isAgent ? '<i class="bi bi-check2-all ms-1 text-info"></i>' : '';
+        const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        const html = `
+            <div class="${alignClass} mb-2" style="max-width: 75%;">
+                <div class="card shadow-sm border-0" style="${bubbleStyle}; border-radius: 7.5px;">
+                    <div class="card-body py-2 px-3">
+                        <div class="mb-1" style="white-space: pre-wrap; font-size: 14.2px; line-height: 19px;">${escapeHtml(msg.content)}</div>
+                        <div class="text-end" style="font-size: 11px; opacity: 0.7; margin-top: -4px;">
+                            ${time}
+                            ${checkIcon}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Check if user is near bottom before appending to auto-scroll
+        const isNearBottom = chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight < 100;
+        
+        $('.d-flex.flex-column').append(html);
+        
+        if (isNearBottom) {
+            scrollToBottom();
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return text;
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Poll for new messages every 3 seconds
+    setInterval(function() {
+        $.ajax({
+            url: '/api/conversations/messages',
+            data: { 
+                conversation_id: conversationId, 
+                last_id: lastMessageId 
+            },
+            success: function(messages) {
+                if (messages && messages.length > 0) {
+                    messages.forEach(function(msg) {
+                        appendMessage(msg);
+                        lastMessageId = msg.id;
+                    });
+                }
+            }
+        });
+    }, 3000);
 </script>
 
 <?php

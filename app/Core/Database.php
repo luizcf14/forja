@@ -104,6 +104,13 @@ class Database
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getMessagesAfter($conversationId, $lastId)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM messages WHERE conversation_id = ? AND id > ? ORDER BY created_at ASC");
+        $stmt->execute([$conversationId, $lastId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // --- AGENT DOCUMENTS ---
 
     public function addAgentDocument($agentId, $filename)

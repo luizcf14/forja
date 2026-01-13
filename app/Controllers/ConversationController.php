@@ -43,4 +43,21 @@ class ConversationController extends Controller
             'messages' => $messages
         ]);
     }
+
+    public function apiMessages()
+    {
+        header('Content-Type: application/json');
+        
+        $conversationId = $_GET['conversation_id'] ?? null;
+        $lastId = $_GET['last_id'] ?? 0;
+
+        if (!$conversationId) {
+            echo json_encode([]);
+            exit;
+        }
+
+        $messages = $this->db->getMessagesAfter($conversationId, $lastId);
+        echo json_encode($messages);
+        exit;
+    }
 }

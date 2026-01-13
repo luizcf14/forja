@@ -45,6 +45,7 @@ $router->post('/settings', 'SettingsController@index');
 // Conversations
 $router->get('/conversations', 'ConversationController@index');
 $router->get('/conversations/show', 'ConversationController@show');
+$router->get('/api/conversations/messages', 'ConversationController@apiMessages');
 
 // Dispatch
 $uri = $_SERVER['REQUEST_URI'];
