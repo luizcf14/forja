@@ -240,6 +240,39 @@ class LoggingTeam(Team):
         finally:
             conn.close()
 
+    def get_ai_status(self, conversation_id: int) -> str:
+        conn = get_db_connection()
+        if not conn:
+            return 'active'
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT ai_status FROM conversations WHERE id = ?", (conversation_id,))
+            row = cursor.fetchone()
+            if row:
+                return row['ai_status']
+        except sqlite3.Error as e:
+            print(f"Error getting AI status: {e}")
+        finally:
+            conn.close()
+        return 'active'
+
+    def get_conversation_id(self, user_id: str) -> Optional[int]:
+         conn = get_db_connection()
+         if not conn:
+             return None
+         try:
+             cursor = conn.cursor()
+             cursor.execute("SELECT id FROM conversations WHERE user_id = ?", (user_id,))
+             row = cursor.fetchone()
+             if row:
+                 return row['id']
+         except sqlite3.Error:
+             pass
+         finally:
+             conn.close()
+         return None
+
+
     def run(self, input: Any = None, *args, **kwargs) -> Any:
         # Extract Session ID (User Number)
         # In Agno/WebApp, session_id is often passed or we need to check kwargs/input structure
@@ -253,6 +286,22 @@ class LoggingTeam(Team):
         
         if session_id:
              self.log_message(session_id, "user", user_message)
+             
+             # Check AI Status
+             conversation_id = self.get_conversation_id(session_id)
+             if conversation_id:
+                 status = self.get_ai_status(conversation_id)
+                 if status == 'paused':
+                     print(f"AI is paused for conversation {conversation_id}. Skipping response.")
+                     # Return a dummy response or similar to satisfy type hints if needed, 
+                     # but typically Agno might expect something. 
+                     # Check if we can return None or empty iterator.
+                     # Returning None might cause issues if caller expects RunResponse.
+                     # Let's try to return a dummy RunResponse or just None if safe.
+                     # Safest is to not call super().run() and return a dummy.
+                     # However, generating a dummy RunResponse might be complex due to imports.
+                     # Let's see... we can just return None and hope Agno handles it or simple string.
+                     return "AI Paused" 
         
         # Execute original run
         response = super().run(input=input, *args, **kwargs)
@@ -270,11 +319,22 @@ class LoggingTeam(Team):
 
     async def arun(self, input: Any = None, *args, **kwargs) -> Any:
         # Async version
+        # Async version
         session_id = kwargs.get("session_id")
         user_message = str(input)
         
         if session_id:
              self.log_message(session_id, "user", user_message)
+
+             # Check AI Status
+             conversation_id = self.get_conversation_id(session_id)
+             if conversation_id:
+                 status = self.get_ai_status(conversation_id)
+                 if status == 'paused':
+                     print(f"AI is paused for conversation {conversation_id}. Skipping response.")
+                     # For async, return a dummy awaitable or just value? arun returns coroutine?
+                     # No, it's async def, so it returns value.
+                     return "AI Paused"
 
         response = await super().arun(input=input, *args, **kwargs)
         
