@@ -9,7 +9,7 @@
                 <a href="/conversations" class="btn btn-sm btn-outline-light me-3 rounded-circle" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
                     <i class="bi bi-arrow-left"></i>
                 </a>
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center flex-grow-1">
                     <div class="bg-secondary rounded-circle text-white d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
                         <i class="bi bi-person-fill fs-5"></i>
                     </div>
@@ -18,6 +18,17 @@
                         <small class="text-white-50">Conversa via WhatsApp</small>
                     </div>
                 </div>
+                <!-- AI Interruption Toggle -->
+                <?php 
+                    $aiStatus = $conversation['ai_status'] ?? 'active'; 
+                    $isPaused = $aiStatus === 'paused';
+                    $toggleIcon = $isPaused ? 'bi-play-fill' : 'bi-pause-fill';
+                    $toggleText = $isPaused ? 'Resume AI' : 'Pause AI';
+                    $btnClass = $isPaused ? 'btn-success' : 'btn-warning';
+                ?>
+                <button id="toggleAiBtn" class="btn btn-sm <?= $btnClass ?> d-flex align-items-center gap-2" onclick="toggleAi()">
+                    <i class="bi <?= $toggleIcon ?>"></i> <span class="d-none d-md-inline"><?= $toggleText ?></span>
+                </button>
             </div>
 
             <!-- Chat Area -->
@@ -65,8 +76,12 @@
             <div class="card-footer bg-dark border-secondary py-2 px-3">
                 <div class="input-group">
                     <span class="input-group-text bg-secondary border-0 text-white-50"><i class="bi bi-emoji-smile"></i></span>
-                    <input type="text" class="form-control border-0 bg-secondary text-white" placeholder="Mensagens apenas de leitura..." disabled>
-                    <span class="input-group-text bg-secondary border-0 text-white-50"><i class="bi bi-mic"></i></span>
+                    <input type="text" id="chatInput" class="form-control border-0 bg-secondary text-white" 
+                           placeholder="<?= $isPaused ? 'Digite uma mensagem manual...' : 'Pause a IA para enviar mensagens manuais...' ?>" 
+                           <?= $isPaused ? '' : 'disabled' ?> onkeypress="handleInputKey(event)">
+                    <button id="sendBtn" class="btn btn-secondary border-0 text-white-50" onclick="sendMessage()" <?= $isPaused ? '' : 'disabled' ?>>
+                        <i class="bi bi-send-fill"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -76,7 +91,11 @@
 <script>
     const conversationId = <?= $conversation['id'] ?>;
     let lastMessageId = <?= !empty($messages) ? end($messages)['id'] : 0 ?>;
+    let aiStatus = '<?= $aiStatus ?>'; // 'active' or 'paused'
     const chatBody = document.querySelector('.card-body');
+    const toggleBtn = document.getElementById('toggleAiBtn');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
 
     // Scroll to bottom on load
     window.onload = function() {
@@ -150,6 +169,84 @@
             }
         });
     }, 3000);
+
+    function toggleAi() {
+        // Toggle logic
+        const newStatus = aiStatus === 'active' ? 'paused' : 'active';
+        
+        $.ajax({
+            url: '/conversations/toggle-ai',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                conversation_id: conversationId,
+                status: newStatus
+            }),
+            success: function(response) {
+                if(response.success) {
+                    aiStatus = newStatus;
+                    updateUiState();
+                }
+            }
+        });
+    }
+
+    function updateUiState() {
+        const isPaused = aiStatus === 'paused';
+        
+        // Update Button
+        toggleBtn.className = `btn btn-sm ${isPaused ? 'btn-success' : 'btn-warning'} d-flex align-items-center gap-2`;
+        toggleBtn.innerHTML = `<i class="bi ${isPaused ? 'bi-play-fill' : 'bi-pause-fill'}"></i> <span class="d-none d-md-inline">${isPaused ? 'Resume AI' : 'Pause AI'}</span>`;
+        
+        // Update Input
+        if (isPaused) {
+            chatInput.removeAttribute('disabled');
+            chatInput.placeholder = 'Digite uma mensagem manual...';
+            sendBtn.removeAttribute('disabled');
+        } else {
+            chatInput.setAttribute('disabled', 'true');
+            chatInput.placeholder = 'Pause a IA para enviar mensagens manuais...';
+            sendBtn.setAttribute('disabled', 'true');
+        }
+    }
+
+    function handleInputKey(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    }
+
+    function sendMessage() {
+        const content = chatInput.value.trim();
+        if (!content) return;
+
+        // Optimistic update? Or wait for success? 
+        // Let's wait for success to be sure.
+        // But clear input immediately.
+        chatInput.value = '';
+
+        $.ajax({
+            url: '/conversations/send-message',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                conversation_id: conversationId,
+                content: content
+            }),
+            success: function(response) {
+                if(response.success) {
+                    // Message will appeal via polling or we can append manually here.
+                    // Let's manually append to be instant.
+                    // Wait, we don't have the message ID from backend, only success.
+                    // We'll trust polling to pick it up in < 3s, or we can mock it.
+                    // But Polling relies on ID > lastId.
+                    // Let's rely on polling for simplicity to avoid duplicate ID issues.
+                } else {
+                   alert('Failed to send message');
+                }
+            }
+        });
+    }
 </script>
 
 <?php

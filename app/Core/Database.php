@@ -61,7 +61,8 @@ class Database
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS conversations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id TEXT UNIQUE NOT NULL,
-            last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            ai_status TEXT DEFAULT 'active'
         )");
 
         // Create Messages Table
@@ -133,6 +134,30 @@ class Database
         $stmt = $this->pdo->prepare("SELECT * FROM messages WHERE conversation_id = ? AND id > ? ORDER BY created_at ASC");
         $stmt->execute([$conversationId, $lastId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getConversationAiStatus($conversationId)
+    {
+        $stmt = $this->pdo->prepare("SELECT ai_status FROM conversations WHERE id = ?");
+        $stmt->execute([$conversationId]);
+        return $stmt->fetchColumn();
+    }
+
+    public function setConversationAiStatus($conversationId, $status)
+    {
+        $stmt = $this->pdo->prepare("UPDATE conversations SET ai_status = ? WHERE id = ?");
+        return $stmt->execute([$status, $conversationId]);
+    }
+
+
+    public function insertMessage($conversationId, $sender, $content)
+    {
+        $stmt = $this->pdo->prepare("INSERT INTO messages (conversation_id, sender, content) VALUES (:conversation_id, :sender, :content)");
+        return $stmt->execute([
+            ':conversation_id' => $conversationId,
+            ':sender' => $sender,
+            ':content' => $content
+        ]);
     }
 
     // --- AGENT DOCUMENTS ---
