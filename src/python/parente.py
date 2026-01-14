@@ -20,7 +20,7 @@ try:
     from agno.vectordb.lancedb import LanceDb, SearchType
     from agno.team import Team
     from agno.os import AgentOS
-    from agno.os.interfaces.whatsapp import Whatsapp
+    from utils.whatsapp.whatsapp import Whatsapp
     
     # Try importing readers, handle if they are missing or moved
     try:

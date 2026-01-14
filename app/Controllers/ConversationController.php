@@ -102,79 +102,37 @@ class ConversationController extends Controller
             echo json_encode(['error' => 'Missing parameters']);
             exit;
         }
-        
-        // 1. Save to Database (as 'agent' sender, or maybe a new type 'manual_agent'?)
-        // The requester asked for "manual response". It is essentially the agent (system) speaking but manually triggered.
-        // Let's stick to 'agent' so it shows up on the Right side.
-        
-        // Need to add insertMessage method or use raw query.
-        // There is no insertMessage in Database.php yet?
-        // Checking Database.php... wait, LoggingTeam inserts into 'messages'.
-        // Database.php does NOT have insertMessage. I need to add it or do raw query.
-        // I'll do raw insert here for now or add method to Database.php. Better add to Database.php
-        
-        // ... Wait, let me check Database.php again. It has insertAgent, createUser... no insertMessage.
-        // I will add insertMessage to Database.php in next tool call, or do it raw here.
-        // Let's do raw here for speed, or better: add to Database.php for consistency. 
-        // I will add insertMessage to ConversationController via DB instance.
-        
-        // Actually, let's assume I'll add `insertMessage` to Database.php.
-        $this->db->insertMessage($conversationId, 'agent', $content);
 
-        // 2. Send to WhatsApp
+        // Get User Phone
         $conversation = $this->db->getConversationById($conversationId);
-        $userPhone = $conversation['user_id']; // user_id in conversations table is the phone number
+        $userPhone = $conversation['user_id']; 
+
+        // Send to Python Interface (internal_send)
+        // Python handles logging to DB now
         
-        $result = $this->sendWhatsAppMessage($userPhone, $content);
-
-        echo json_encode(['success' => true, 'whatsapp_response' => $result]);
-        exit;
-    }
-
-    private function sendWhatsAppMessage($to, $message)
-    {
-        $token = $_ENV['WHATSAPP_ACCESS_TOKEN'] ?? getenv('WHATSAPP_ACCESS_TOKEN');
-        $phoneId = $_ENV['WHATSAPP_PHONE_NUMBER_ID'] ?? getenv('WHATSAPP_PHONE_NUMBER_ID');
-        
-        // Fallback for loading .env if $_ENV is empty
-        if (!$token || !$phoneId) {
-             // Basic .env parser for this context
-             if (file_exists(__DIR__ . '/../../.env')) {
-                 $lines = file(__DIR__ . '/../../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                 foreach ($lines as $line) {
-                     if (strpos(trim($line), '#') === 0) continue;
-                     list($name, $value) = explode('=', $line, 2);
-                     if (trim($name) == 'WHATSAPP_ACCESS_TOKEN') $token = trim($value);
-                     if (trim($name) == 'WHATSAPP_PHONE_NUMBER_ID') $phoneId = trim($value);
-                 }
-             }
-        }
-
-        if (!$token || !$phoneId) {
-            return ['error' => 'Missing WhatsApp credentials'];
-        }
-
-        $url = "https://graph.facebook.com/v21.0/{$phoneId}/messages";
-        
+        $url = "http://localhost:3000/whatsapp/internal_send";
         $data = [
-            'messaging_product' => 'whatsapp',
-            'to' => $to,
-            'text' => ['body' => $message]
+            'to' => $userPhone,
+            'message' => $content
         ];
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $token,
-            'Content-Type: application/json'
-        ]);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
-        return json_decode($response, true);
+        if ($httpCode >= 400) {
+             http_response_code(500);
+             echo json_encode(['error' => 'Failed to send via Python interface', 'details' => $response]);
+             exit;
+        }
+
+        echo json_encode(['success' => true, 'response' => json_decode($response, true)]);
+        exit;
     }
 }

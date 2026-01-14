@@ -150,6 +150,7 @@ class Database
     }
 
 
+
     public function insertMessage($conversationId, $sender, $content)
     {
         $stmt = $this->pdo->prepare("INSERT INTO messages (conversation_id, sender, content) VALUES (:conversation_id, :sender, :content)");
