@@ -1,3 +1,3 @@
-from app.utils.whatsapp.whatsapp import Whatsapp
+from .whatsapp import Whatsapp
 
 __all__ = ["Whatsapp"]
