@@ -137,9 +137,11 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
                     messages = change.get("value", {}).get("messages", [])
 
                     if not messages:
+                        print("DEBUG: Webhook hit but no messages found.")
                         continue
 
                     message = messages[0]
+                    print(f"DEBUG: Webhook received message: {message}")
                     background_tasks.add_task(process_message, message, agent, team)
 
             return {"status": "processing"}
@@ -195,9 +197,13 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
             log_info(f"Processing message from {phone_number}: {message_text}")
             
             # --- AI PAUSE LOGIC ---
+            print(f"DEBUG: Checking AI status for {phone_number} using DB at {DB_PATH}")
             status = get_ai_status(phone_number)
+            print(f"DEBUG: Status for {phone_number} is '{status}'")
+            
             if status == 'paused':
                 log_info(f"AI is PAUSED for user {phone_number}. Skipping response.")
+                print(f"DEBUG: PAUSED detected. Log message to DB and return.")
                 
                 # Try to log the user message to DB so it appears in history
                 # We assume 'team' is LoggingTeam instance
