@@ -58,7 +58,14 @@
                         <div class="<?= $alignClass ?> mb-2" style="max-width: 75%;">
                             <div class="card shadow-sm border-0" style="<?= $bubbleStyle ?>; border-radius: 7.5px;">
                                 <div class="card-body py-2 px-3">
-                                    <div class="mb-1" style="white-space: pre-wrap; font-size: 14.2px; line-height: 19px;"><?= htmlspecialchars($msg['content']) ?></div>
+                                    <?php if (!empty($msg['media_type']) && $msg['media_type'] === 'audio'): ?>
+                                        <audio controls src="<?= htmlspecialchars($msg['media_url']) ?>" class="mb-1" style="max-width: 100%;"></audio>
+                                        <?php if (!empty($msg['content']) && $msg['content'] !== 'Audio message received'): ?>
+                                            <div class="mb-1" style="white-space: pre-wrap; font-size: 14.2px; line-height: 19px;"><?= htmlspecialchars($msg['content']) ?></div>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <div class="mb-1" style="white-space: pre-wrap; font-size: 14.2px; line-height: 19px;"><?= htmlspecialchars($msg['content']) ?></div>
+                                    <?php endif; ?>
                                     <div class="text-end" style="font-size: 11px; opacity: 0.7; margin-top: -4px;">
                                         <?= date('H:i', strtotime($msg['created_at'])) ?>
                                         <?php if (!$isAgent): ?>
@@ -121,7 +128,12 @@
             <div class="${alignClass} mb-2" style="max-width: 75%;">
                 <div class="card shadow-sm border-0" style="${bubbleStyle}; border-radius: 7.5px;">
                     <div class="card-body py-2 px-3">
-                        <div class="mb-1" style="white-space: pre-wrap; font-size: 14.2px; line-height: 19px;">${escapeHtml(msg.content)}</div>
+                        ${msg.media_type === 'audio' ? `
+                            <audio controls src="${msg.media_url}" class="mb-1" style="max-width: 100%;"></audio>
+                            ${msg.content && msg.content !== 'Audio message received' ? `<div class="mb-1" style="white-space: pre-wrap; font-size: 14.2px; line-height: 19px;">${escapeHtml(msg.content)}</div>` : ''}
+                        ` : `
+                            <div class="mb-1" style="white-space: pre-wrap; font-size: 14.2px; line-height: 19px;">${escapeHtml(msg.content)}</div>
+                        `}
                         <div class="text-end" style="font-size: 11px; opacity: 0.7; margin-top: -4px;">
                             ${time}
                             ${checkIcon}

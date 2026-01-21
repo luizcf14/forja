@@ -164,17 +164,19 @@ class Database
         return $stmt->execute([$conversationId]);
     }
 
-    public function insertMessage($conversationId, $sender, $content)
+    public function insertMessage($conversationId, $sender, $content, $mediaType = null, $mediaUrl = null)
     {
         // Agent messages are read by default, user messages are unread
         $isRead = ($sender !== 'user') ? 1 : 0;
         
-        $stmt = $this->pdo->prepare("INSERT INTO messages (conversation_id, sender, content, is_read) VALUES (:conversation_id, :sender, :content, :is_read)");
+        $stmt = $this->pdo->prepare("INSERT INTO messages (conversation_id, sender, content, is_read, media_type, media_url) VALUES (:conversation_id, :sender, :content, :is_read, :media_type, :media_url)");
         return $stmt->execute([
             ':conversation_id' => $conversationId,
             ':sender' => $sender,
             ':content' => $content,
-            ':is_read' => $isRead
+            ':is_read' => $isRead,
+            ':media_type' => $mediaType,
+            ':media_url' => $mediaUrl
         ]);
     }
 

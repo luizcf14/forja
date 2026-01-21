@@ -209,7 +209,7 @@ def load_agents() -> List[Agent]:
 
 
 class LoggingTeam(Team):
-    def log_message(self, user_id: str, sender: str, content: str):
+    def log_message(self, user_id: str, sender: str, content: str, media_type: str = None, media_url: str = None):
         conn = get_db_connection()
         if not conn:
             return
@@ -231,8 +231,8 @@ class LoggingTeam(Team):
             
             # 2. Insert Message
             cursor.execute(
-                "INSERT INTO messages (conversation_id, sender, content) VALUES (?, ?, ?)",
-                (conversation_id, sender, content)
+                "INSERT INTO messages (conversation_id, sender, content, media_type, media_url) VALUES (?, ?, ?, ?, ?)",
+                (conversation_id, sender, content, media_type, media_url)
             )
             
             conn.commit()

@@ -172,6 +172,9 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
             message_audio = None
             message_doc = None
             
+            saved_media_type = None
+            saved_media_url = None
+            
             message_id = message.get("id")
             await typing_indicator_async(message_id)
 
@@ -193,8 +196,32 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
                     finally:
                         message_video = message["video"]["id"]
                 case "audio":
-                    message_text = "Reply to audio"
+                    message_text = "Audio message received"
                     message_audio = message["audio"]["id"]
+                    
+                    try:
+                        # Download audio
+                        audio_content = await get_media_async(message_audio)
+                        if audio_content:
+                             # Ensure upload dir exists
+                             upload_dir = PROJECT_ROOT / "public" / "uploads" / "audio"
+                             upload_dir.mkdir(parents=True, exist_ok=True)
+                             
+                             filename = f"{message_audio}.ogg" # WhatsApp usually uses OGG/Opus for voice notes
+                             file_path = upload_dir / filename
+                             
+                             with open(file_path, "wb") as f:
+                                 f.write(audio_content)
+                                 
+                             log_info(f"Saved audio to {file_path}")
+                             
+                             # Set variables for logging
+                             saved_media_type = "audio"
+                             saved_media_url = f"/uploads/audio/{filename}"
+                             
+                    except Exception as e:
+                         log_error(f"Failed to download audio: {e}")
+                         message_text = f"[Audio Download Failed: {e}]"
                 case "document":
                     message_text = "Process the document"
                     message_doc = message["document"]["id"]
@@ -225,8 +252,21 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
                 # We assume 'team' is LoggingTeam instance
                 if team and hasattr(team, 'log_message'):
                      try:
-                         # log_message(user_id, sender, content)
-                         team.log_message(f"wa:{phone_number}", "user", message_text)
+                         # log_message(user_id, sender, content, media_type, media_url)
+                         
+                         # Check if we have saved media from the case above
+                         # Note: The logic inside 'case "audio"' needs to set saved_media_type/url
+                         # I need to update the replacement above to set these variables
+                         
+                         media_type = saved_media_type
+                         media_url = saved_media_url
+                         
+                         # Re-infer from message_audio if needed? No, better to set in case.
+                         if message_audio and not media_url: 
+                             # If we failed to download or logic above didn't set it (due to scope issues if I mess up)
+                             pass
+
+                         team.log_message(f"wa:{phone_number}", "user", message_text, media_type, media_url)
                          log_info("Logged user message to DB (AI Paused)")
                      except Exception as log_err:
                          log_error(f"Failed to log message during pause: {log_err}")
