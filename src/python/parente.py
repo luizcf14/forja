@@ -238,8 +238,51 @@ class LoggingTeam(Team):
             conn.commit()
         except sqlite3.Error as e:
             print(f"Error logging message: {e}")
+
         finally:
             conn.close()
+
+    def get_conversation_history(self, user_id: str, limit: int = 10) -> str:
+        """Fetches recent conversation history from the database."""
+        conn = get_db_connection()
+        if not conn:
+            return ""
+            
+        history_text = ""
+        try:
+            cursor = conn.cursor()
+            # Fetch conversation ID
+            cursor.execute("SELECT id FROM conversations WHERE user_id = ?", (user_id,))
+            row = cursor.fetchone()
+            
+            if row:
+                conversation_id = row['id']
+                # Fetch recent messages
+                cursor.execute("""
+                    SELECT sender, content 
+                    FROM messages 
+                    WHERE conversation_id = ? 
+                    ORDER BY id DESC LIMIT ?
+                """, (conversation_id, limit))
+                
+                rows = cursor.fetchall()
+                # Reverse to chronological order
+                rows = reversed(rows)
+                
+                history_entries = []
+                for msg in rows:
+                    role = "User" if msg['sender'] == 'user' else "Agent"
+                    history_entries.append(f"{role}: {msg['content']}")
+                
+                if history_entries:
+                    history_text = "Previous Conversation History:\n" + "\n".join(history_entries) + "\n---\n"
+                    
+        except sqlite3.Error as e:
+            print(f"Error fetching history: {e}")
+        finally:
+            conn.close()
+            
+        return history_text
 
 
  
@@ -257,6 +300,15 @@ class LoggingTeam(Team):
         
         if session_id:
              self.log_message(session_id, "user", user_message)
+             
+             # INJECT HISTORY
+             history_context = self.get_conversation_history(session_id)
+             if history_context:
+                 if isinstance(input, str):
+                     # If input is string, prepend history
+                     input = history_context + "\n" + input
+                 # Note: If input is not a string (e.g. list of messages), this simple prepend might need adjustment.
+                 # But for basic usage here, string input is expected.
         
         # Execute original run
         response = super().run(input=input, *args, **kwargs)
@@ -281,6 +333,12 @@ class LoggingTeam(Team):
         if session_id:
              self.log_message(session_id, "user", user_message)
 
+             # INJECT HISTORY
+             history_context = self.get_conversation_history(session_id)
+             if history_context:
+                 if isinstance(input, str):
+                     input = history_context + "\n" + input
+
         response = await super().arun(input=input, *args, **kwargs)
         
         if session_id and response:
@@ -293,8 +351,8 @@ print(f"Searching for database at: {DB_PATH}")
 loaded_agents = load_agents()
 db = SqliteDb(db_file="teamMemory.db")
 team = LoggingTeam(
-    add_history_to_context=True,
-    db=db,
+    # add_history_to_context=True, # Disabled to use custom injection
+    # db=db, # Disabled to use custom injection
     role="""Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas 
     dos usuarios, da forma mais simples e direta possivel, coorden as perguntas ou partes dela para os 
     membros do time, cada membro é especialista em um assunto então voce pode perguntar a varios deles. 

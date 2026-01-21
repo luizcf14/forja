@@ -21,6 +21,9 @@ class ConversationController extends Controller
     public function index()
     {
         $conversations = $this->db->getConversations();
+        foreach ($conversations as &$conversation) {
+            $conversation['unread_count'] = $this->db->countUnreadMessages($conversation['id']);
+        }
         $this->view('conversations/index', ['conversations' => $conversations]);
     }
 
@@ -35,6 +38,9 @@ class ConversationController extends Controller
         if (!$conversation) {
             $this->redirect('/conversations');
         }
+
+        // Mark unread user messages as read
+        $this->db->markMessagesAsRead($id);
 
         $messages = $this->db->getMessages($id);
         
@@ -57,6 +63,13 @@ class ConversationController extends Controller
         }
 
         $messages = $this->db->getMessagesAfter($conversationId, $lastId);
+        
+        // If we are fetching messages via API, it means the user is viewing the conversation
+        // So we mark unread messages as read
+        $this->db->markMessagesAsRead($conversationId);
+        
+        // Debug
+        header("X-Debug-Read: true");
         
         // Also return the current AI Status
         $aiStatus = $this->db->getConversationAiStatus($conversationId);

@@ -151,13 +151,30 @@ class Database
 
 
 
+    public function countUnreadMessages($conversationId)
+    {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM messages WHERE conversation_id = ? AND is_read = 0 AND sender = 'user'");
+        $stmt->execute([$conversationId]);
+        return $stmt->fetchColumn();
+    }
+
+    public function markMessagesAsRead($conversationId)
+    {
+        $stmt = $this->pdo->prepare("UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender = 'user'");
+        return $stmt->execute([$conversationId]);
+    }
+
     public function insertMessage($conversationId, $sender, $content)
     {
-        $stmt = $this->pdo->prepare("INSERT INTO messages (conversation_id, sender, content) VALUES (:conversation_id, :sender, :content)");
+        // Agent messages are read by default, user messages are unread
+        $isRead = ($sender !== 'user') ? 1 : 0;
+        
+        $stmt = $this->pdo->prepare("INSERT INTO messages (conversation_id, sender, content, is_read) VALUES (:conversation_id, :sender, :content, :is_read)");
         return $stmt->execute([
             ':conversation_id' => $conversationId,
             ':sender' => $sender,
-            ':content' => $content
+            ':content' => $content,
+            ':is_read' => $isRead
         ]);
     }
 

@@ -18,6 +18,11 @@
                             <h5 class="mb-1 fw-bold text-white">
                                 <i class="bi bi-person-circle text-primary me-2"></i>
                                 <?= htmlspecialchars($conv['user_id']) ?>
+                                <?php if (!empty($conv['unread_count']) && $conv['unread_count'] > 0): ?>
+                                    <span class="badge bg-danger rounded-pill ms-2 fs-6">
+                                        <?= $conv['unread_count'] ?>
+                                    </span>
+                                <?php endif; ?>
                             </h5>
                             <small class="text-secondary">
                                 <?= date('d/m/Y H:i', strtotime($conv['last_message_at'])) ?>

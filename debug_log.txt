@@ -1,0 +1,96 @@
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559184504880 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559184504880 is 'active'
+DEBUG: Checking AI status for 559184504880 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559184504880 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559184504880 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559184504880 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559184504880 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559184504880 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559184504880 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559184504880 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559184504880 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559184504880 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'paused'
+DEBUG: PAUSED detected. Log message to DB and return.
+DEBUG: Checking AI status for 559185159945 using DB at C:\Users\Solved-Blerys-Win\Documents\Povos\Forja\forja\database.sqlite
+DEBUG: Status for 559185159945 is 'active'
