@@ -18,6 +18,7 @@ try:
     from agno.knowledge.embedder.google import GeminiEmbedder
     from agno.knowledge.knowledge import Knowledge
     from agno.vectordb.lancedb import LanceDb, SearchType
+    from agno.db.sqlite import SqliteDb
     from agno.team import Team
     from agno.os import AgentOS
     from utils.whatsapp.whatsapp import Whatsapp
@@ -174,10 +175,10 @@ def load_agents() -> List[Agent]:
                         print(f"  - Adding document: {kb_file}")
                         if kb_path.suffix.lower() == '.pdf':
                             if PDFReader:
-                                knowledge_base.add_content(path=str(kb_path), reader=PDFReader(chunk=True))
+                                knowledge_base.add_content(path=str(kb_path), reader=PDFReader(chunk=True), skip_if_exists=True)
                         elif kb_path.suffix.lower() in ['.txt', '.md', '.html']:
                              if TextReader:
-                                knowledge_base.add_content(path=str(kb_path), reader=TextReader(chunk=True))
+                                knowledge_base.add_content(path=str(kb_path), reader=TextReader(chunk=True), skip_if_exists=True)
                     else:
                         print(f"  - Warning: Document not found: {kb_file}")
 
@@ -241,7 +242,7 @@ class LoggingTeam(Team):
             conn.close()
 
 
-
+ 
 
     def run(self, input: Any = None, *args, **kwargs) -> Any:
         # Extract Session ID (User Number)
@@ -290,9 +291,10 @@ class LoggingTeam(Team):
 
 print(f"Searching for database at: {DB_PATH}")
 loaded_agents = load_agents()
-
+db = SqliteDb(db_file="teamMemory.db")
 team = LoggingTeam(
     add_history_to_context=True,
+    db=db,
     role="""Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas 
     dos usuarios, da forma mais simples e direta possivel, coorden as perguntas ou partes dela para os 
     membros do time, cada membro é especialista em um assunto então voce pode perguntar a varios deles. 

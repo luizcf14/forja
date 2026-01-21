@@ -32,3 +32,7 @@ You can also simply double-click the `start.bat` file to run the server.
 
 ### Python Runner
 uvicorn parente:app --host 0.0.0.0 --port 3000 --reload
+python -u src/python/parente.py
+
+### NGROK Runner
+ngrok http --url=joey-rational-escargot.ngrok-free.app 3000

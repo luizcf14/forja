@@ -43,9 +43,15 @@ def get_ai_status(phone_number: str) -> str:
         cursor = conn.cursor()
         
         # Check conversations table
-        # user_id is the phone number
-        cursor.execute("SELECT ai_status FROM conversations WHERE user_id = ?", (phone_number,))
+        # 1. Try with 'wa:' prefix first (new format)
+        wa_id = f"wa:{phone_number}"
+        cursor.execute("SELECT ai_status FROM conversations WHERE user_id = ?", (wa_id,))
         row = cursor.fetchone()
+        
+        if not row:
+            # 2. Fallback to raw phone number (old format)
+            cursor.execute("SELECT ai_status FROM conversations WHERE user_id = ?", (phone_number,))
+            row = cursor.fetchone()
         
         conn.close()
         
@@ -75,11 +81,16 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
         try:
              # Log the manual agent message to DB
             if team and hasattr(team, 'log_message'):
-                 try:
-                     team.log_message(body.to, "agent", body.message)
-                     log_info(f"Logged manual agent message to {body.to}")
-                 except Exception as log_err:
-                     log_error(f"Failed to log manual message: {log_err}")
+                try:
+                    # Ensure wa: prefix is present but not duplicated
+                    log_to = body.to
+                    if not log_to.startswith("wa:"):
+                        log_to = f"wa:{log_to}"
+                        
+                    team.log_message(log_to, "agent", body.message)
+                    log_info(f"Logged manual agent message to {log_to}")
+                except Exception as log_err:
+                    log_error(f"Failed to log manual message: {log_err}")
 
             # Send via WhatsApp
             await _send_whatsapp_message(body.to, body.message)
@@ -197,20 +208,25 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
             log_info(f"Processing message from {phone_number}: {message_text}")
             
             # --- AI PAUSE LOGIC ---
-            print(f"DEBUG: Checking AI status for {phone_number} using DB at {DB_PATH}")
+            with open("debug_log.txt", "a") as f:
+                f.write(f"DEBUG: Checking AI status for {phone_number} using DB at {DB_PATH}\n")
+            
             status = get_ai_status(phone_number)
-            print(f"DEBUG: Status for {phone_number} is '{status}'")
+            
+            with open("debug_log.txt", "a") as f:
+                f.write(f"DEBUG: Status for {phone_number} is '{status}'\n")
             
             if status == 'paused':
                 log_info(f"AI is PAUSED for user {phone_number}. Skipping response.")
-                print(f"DEBUG: PAUSED detected. Log message to DB and return.")
+                with open("debug_log.txt", "a") as f:
+                    f.write(f"DEBUG: PAUSED detected. Log message to DB and return.\n")
                 
                 # Try to log the user message to DB so it appears in history
                 # We assume 'team' is LoggingTeam instance
                 if team and hasattr(team, 'log_message'):
                      try:
                          # log_message(user_id, sender, content)
-                         team.log_message(phone_number, "user", message_text)
+                         team.log_message(f"wa:{phone_number}", "user", message_text)
                          log_info("Logged user message to DB (AI Paused)")
                      except Exception as log_err:
                          log_error(f"Failed to log message during pause: {log_err}")

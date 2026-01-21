@@ -104,14 +104,8 @@ def main():
             import lancedb
             import shutil
             
-            # Clean up lancedb directory to force fresh start
+            # lancedb path
             lancedb_path = os.path.abspath("tmp/lancedb_agent_forge")
-            if os.path.exists(lancedb_path):
-                try:
-                    shutil.rmtree(lancedb_path)
-                    logging.debug(f"DEBUG: Removed LanceDB directory: {lancedb_path}")
-                except Exception as e:
-                    logging.error(f"DEBUG: Failed to remove LanceDB directory: {e}")
 
             vector_db = LanceDb(
                 table_name="agent_docs",
@@ -129,7 +123,7 @@ def main():
                     kb_path = os.path.abspath(kb_file)
                     if os.path.exists(kb_path):
                         logging.debug(f"Adding to KB: {kb_path}")
-                        knowledge_base.add_content(path=kb_path, reader=PDFReader(chunk=True))
+                        knowledge_base.add_content(path=kb_path, reader=PDFReader(chunk=True), skip_if_exists=True)
                     else:
                         logging.warning(f"KB file not found: {kb_path}")
                 except Exception as e:
