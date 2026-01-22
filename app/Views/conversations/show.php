@@ -86,6 +86,11 @@
                     <input type="text" id="chatInput" class="form-control border-0 bg-secondary text-white" 
                            placeholder="<?= $isPaused ? 'Digite uma mensagem manual...' : 'Pause a IA para enviar mensagens manuais...' ?>" 
                            <?= $isPaused ? '' : 'disabled' ?> onkeypress="handleInputKey(event)">
+                    
+                    <button id="recordBtn" class="btn btn-secondary border-0 text-white-50" onclick="toggleRecording()" <?= $isPaused ? '' : 'disabled' ?>>
+                        <i id="recordIcon" class="bi bi-mic-fill"></i>
+                    </button>
+                    
                     <button id="sendBtn" class="btn btn-secondary border-0 text-white-50" onclick="sendMessage()" <?= $isPaused ? '' : 'disabled' ?>>
                         <i class="bi bi-send-fill"></i>
                     </button>
@@ -103,6 +108,13 @@
     const toggleBtn = document.getElementById('toggleAiBtn');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
+    const recordBtn = document.getElementById('recordBtn');
+    const recordIcon = document.getElementById('recordIcon');
+
+    // Recording State
+    let isRecording = false;
+    let mediaRecorder;
+    let audioChunks = [];
 
     // Scroll to bottom on load
     window.onload = function() {
@@ -215,10 +227,12 @@
             chatInput.removeAttribute('disabled');
             chatInput.placeholder = 'Digite uma mensagem manual...';
             sendBtn.removeAttribute('disabled');
+            recordBtn.removeAttribute('disabled');
         } else {
             chatInput.setAttribute('disabled', 'true');
             chatInput.placeholder = 'Pause a IA para enviar mensagens manuais...';
             sendBtn.setAttribute('disabled', 'true');
+            recordBtn.setAttribute('disabled', 'true');
         }
     }
 
@@ -232,9 +246,6 @@
         const content = chatInput.value.trim();
         if (!content) return;
 
-        // Optimistic update? Or wait for success? 
-        // Let's wait for success to be sure.
-        // But clear input immediately.
         chatInput.value = '';
 
         $.ajax({
@@ -247,18 +258,106 @@
             }),
             success: function(response) {
                 if(response.success) {
-                    // Message will appeal via polling or we can append manually here.
-                    // Let's manually append to be instant.
-                    // Wait, we don't have the message ID from backend, only success.
-                    // We'll trust polling to pick it up in < 3s, or we can mock it.
-                    // But Polling relies on ID > lastId.
-                    // Let's rely on polling for simplicity to avoid duplicate ID issues.
+                    // Polling will pick it up
                 } else {
                    alert('Failed to send message');
                 }
             }
         });
     }
+    
+    // Audio Recording Logic
+    async function toggleRecording() {
+        if (!isRecording) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+    }
+
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = uploadAudio;
+
+            mediaRecorder.start();
+            isRecording = true;
+            
+            // UI Update
+            recordBtn.classList.remove('btn-secondary');
+            recordBtn.classList.add('btn-danger', 'recording-pulse');
+            recordIcon.className = 'bi bi-stop-fill';
+            
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            alert("Não foi possível acessar o microfone.");
+        }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder) {
+            mediaRecorder.stop();
+            isRecording = false;
+            
+            // UI Update
+            recordBtn.classList.remove('btn-danger', 'recording-pulse');
+            recordBtn.classList.add('btn-secondary');
+            recordIcon.className = 'bi bi-mic-fill';
+        }
+    }
+
+    function uploadAudio() {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
+        
+        let formData = new FormData();
+        formData.append("audio", audioBlob, "recording.ogg");
+        formData.append("conversation_id", conversationId);
+
+        // UI Feedback - Disable mic while uploading
+        recordBtn.disabled = true;
+
+        $.ajax({
+            url: '/conversations/send-audio',
+            method: 'POST',
+            processData: false,
+            contentType: false,
+            data: formData,
+            success: function(response) {
+                recordBtn.disabled = false;
+                if(response.success) {
+                    // Success
+                } else {
+                    alert('Failed to send audio: ' + (response.error || 'Unknown error'));
+                }
+            },
+            error: function(err) {
+                recordBtn.disabled = false;
+                alert('Error uploading audio');
+                console.error(err);
+            }
+        });
+    }
+
+    // Add pulse animation style
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .recording-pulse {
+            animation: pulse 1s infinite;
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 
 <?php

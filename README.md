@@ -6,6 +6,12 @@ This project uses PHP's built-in web server.
 
 ### Prerequisites
 - PHP 8.0 or higher
+- Python 3.10+
+- FFmpeg (Required for audio support)
+    - **Linux**: `sudo apt-get install ffmpeg`
+    - **Windows**: `winget install ffmpeg` (or ensure `ffmpeg` is in your PATH)
+    - **Note**: Ensure `ffmpeg` is available in your system PATH or set the `FFMPEG_PATH` environment variable to the directory containing the `ffmpeg` binary.
+
 
 ### Setup
 Before running the application for the first time, initialize the database:

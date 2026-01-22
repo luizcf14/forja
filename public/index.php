@@ -48,6 +48,7 @@ $router->get('/conversations/show', 'ConversationController@show');
 $router->get('/api/conversations/messages', 'ConversationController@apiMessages');
 $router->post('/conversations/toggle-ai', 'ConversationController@toggleAi');
 $router->post('/conversations/send-message', 'ConversationController@sendMessage');
+$router->post('/conversations/send-audio', 'ConversationController@sendAudio');
 
 // Dispatch
 $uri = $_SERVER['REQUEST_URI'];

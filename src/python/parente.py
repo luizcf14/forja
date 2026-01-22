@@ -13,6 +13,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DB_PATH = PROJECT_ROOT / "database.sqlite"
 
 try:
+    from agno.models.ollama import Ollama
     from agno.agent import Agent
     from agno.models.google import Gemini
     from agno.knowledge.embedder.google import GeminiEmbedder
@@ -21,7 +22,11 @@ try:
     from agno.db.sqlite import SqliteDb
     from agno.team import Team
     from agno.os import AgentOS
+    from agno.team import Team
+    from agno.os import AgentOS
+    from agno.media import Audio
     from utils.whatsapp.whatsapp import Whatsapp
+    from tools.audio_gen import AudioGenerator
     
     # Try importing readers, handle if they are missing or moved
     try:
@@ -150,11 +155,6 @@ def load_agents() -> List[Agent]:
                  kb_files.append(agent_data['knowledge_base'])
 
             if kb_files:
-                # Initialize VectorDB shared for this agent? Or create kb per file? 
-                # Agno Knowledge can usually take multiple sources.
-                # But here we are using load_knowledge_base helper which returns a KB object.
-                # We should probably refactor to create one Knowledge object and add multiple sources.
-                
                 # Create one KnowledgeBase per agent if files exist
                 vector_db_path = PROJECT_ROOT / "lancedb_data"
                 vector_db = LanceDb(
@@ -185,8 +185,12 @@ def load_agents() -> List[Agent]:
             # Initialize Agno Agent
             # Using Gemini as default model as seen in optimizer.py, default to gemini-2.5-flash
             try:
+                agentModel = Gemini(id="gemini-2.5-flash")
+                if agent_data.get('type') == 'fast':
+                    print("Using fast agent model")
+                    agentModel = Ollama(id="gemma3-4b-it-qat", host="http://localhost:11434")
                 agent = Agent(
-                    model=Gemini(id="gemini-2.5-flash"), # Using a standard available model ID or the one from optimizer
+                    model=agentModel, # Using a standard available model ID or the one from optimizer
                     description=f"Agent for {agent_data['subject']}",
                     role=role,
                     instructions=instructions,
@@ -299,7 +303,7 @@ class LoggingTeam(Team):
         user_message = str(input)
         
         if session_id:
-             self.log_message(session_id, "user", user_message)
+             self.log_message(session_id, "user", user_message, media_type=kwargs.get("media_type"), media_url=kwargs.get("media_url"))
              
              # INJECT HISTORY
              history_context = self.get_conversation_history(session_id)
@@ -331,19 +335,79 @@ class LoggingTeam(Team):
         user_message = str(input)
         
         if session_id:
-             self.log_message(session_id, "user", user_message)
+             self.log_message(session_id, "user", user_message, media_type=kwargs.get("media_type"), media_url=kwargs.get("media_url"))
+
 
              # INJECT HISTORY
              history_context = self.get_conversation_history(session_id)
              if history_context:
                  if isinstance(input, str):
-                     input = history_context + "\n" + input
+                     # Inject User ID info explicitly so the agent knows it for tool calls
+                     # Assuming session_id matches the format "wa:PHONE" or just "PHONE"
+                     # The prompt uses "user_id" as the argument name.
+                     # We extract the pure phone number if it has "wa:" prefix
+                     clean_user_id = session_id.replace("wa:", "")
+                     input = f"Current User ID: {clean_user_id}\n" + history_context + "\n" + input
 
+
+        # Execute original run
         response = await super().arun(input=input, *args, **kwargs)
         
+        media_type = None
+        media_url = None
+        
+        # Check if the tool was used and returned a file path
+        # Check for path pattern in the content
+        if response and response.content:
+            import re
+            # Regex to find the path, handling both forward and back slashes, looking for public/uploads/audio/...
+            # Updated to support wav, ogg, mp3 AND subfolders (e.g. public/uploads/audio/userid/speech_...)
+            match = re.search(r"(?:[a-zA-Z]:)?[\\/].*?public[\\/]uploads[\\/]audio[\\/].*?speech_[\w-]+\.(?:wav|ogg|mp3)", str(response.content).replace("\\\\", "\\"))
+            
+            if match:
+                file_path_str = match.group(0).strip()
+                response.response_audio_url_internal = file_path_str
+                
+                # For logging - Construct relative URL for web playback
+                # file_path_str is absolute. We need relative to project root / public
+                # We know the structure is .../public/uploads/audio/...
+                # So we want /uploads/audio/...
+                try:
+                     # Find index of 'uploads' and slice from there
+                     path_obj = Path(file_path_str)
+                     parts = path_obj.parts
+                     if "uploads" in parts:
+                         idx = parts.index("uploads")
+                         # Join from uploads/ onwards, prepending /
+                         media_url = "/" + "/".join(parts[idx:])
+                     else:
+                         media_url = file_path_str # Fallback
+                except:
+                     media_url = file_path_str
+
+                media_type = "audio" 
+                
+                try:
+                    with open(file_path_str, "rb") as f:
+                        audio_content = f.read()
+                        
+                        file_ext = Path(file_path_str).suffix.lower()
+                        mime_type = "audio/wav"
+                        if file_ext == ".ogg":
+                            mime_type = "audio/ogg"
+                        elif file_ext == ".mp3":
+                            mime_type = "audio/mpeg"
+                            
+                        response.audio = Audio(content=audio_content, mime_type=mime_type)
+                        
+                        # Clear text content so it's not sent as text
+                        response.content = ""
+                except Exception as e:
+                    print(f"Error reading generated audio file: {e}") 
+       
         if session_id and response:
              agent_message = str(response.content)
-             self.log_message(session_id, "agent", agent_message)
+             self.log_message(session_id, "agent", agent_message, media_type, media_url)
              
         return response
 
@@ -351,6 +415,8 @@ print(f"Searching for database at: {DB_PATH}")
 loaded_agents = load_agents()
 db = SqliteDb(db_file="teamMemory.db")
 team = LoggingTeam(
+    add_memories_to_context=True, 
+    db=db,
     # add_history_to_context=True, # Disabled to use custom injection
     # db=db, # Disabled to use custom injection
     role="""Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas 
@@ -359,14 +425,23 @@ team = LoggingTeam(
     Sempre tente sumarizar as respostas. Seja muito Claro e Direto.
     
     Quando perguntado explique que voce é um assistente virtual multi-agente criado pela Solved para o Projeto Conexão Povos da Floresta. Seja sempre amigavel.
-    A sua versão atual é a 0.0.1-Alpha-Release Candidate. 
+    A sua versão atual é a 0.0.1-RC. 
     Quando for perguntado sobre quais temas voce pode ajudar, os temas são os mesmos dos membros do seu time, explique ao usuario quais os temas que seu time pode ajudar.
     
     - Jamais responda a perguntas que voce nao possa responder, ou seja, perguntas que voce nao tenha conhecimento.
     - Jamais responda perguntas politicas, religiosas ou filosoficas.
     - Responda apenas perguntas que estejam no dominio do time que voce coordena e sobre o projeto conexão povos da floresta.
+    - Se o usuário pedir para responder em áudio ou enviar uma mensagem de voz, você DEVE usar a ferramenta `generate_speech` para gerar o áudio.
+    - IMPORTANTE: Ao usar a ferramenta `generate_speech`, você DEVE passar o `user_id` (que é o número de telefone do usuário) como argumento.
+    - IMPORTANTE: `generate_speech` retorna o caminho do arquivo. Você DEVE incluir esse caminho na sua resposta final TEXTUAL.
+    - IMPORTANTE: somente chame a ferramenta `AudioGenerator` se voce já terminou a comunicação interna e sumarizou as respostas.
+    - SEAMLESS: Nunca diga "De acordo com o agente X" ou "O especialista Y disse". Sintetize a informação como se fosse conhecimento seu (Do Parente). Você é uma entidade única para o usuário.
+    - Não cite nomes de membros do time. A resposta deve ser fluida e direta.
+    - Por último, use a tool com o resultado sintetizado.
     """,
     members=loaded_agents,
+    delegate_to_all_members=True,
+    tools=[AudioGenerator()],
     model=Gemini(id="gemini-2.5-flash"),
     respond_directly=False,
     markdown=True)

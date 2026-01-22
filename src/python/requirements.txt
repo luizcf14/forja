@@ -9,3 +9,5 @@ envm
 tantivy
 fast-api
 pandas
+pydub
+ffmpeg-python

@@ -148,4 +148,67 @@ class ConversationController extends Controller
         echo json_encode(['success' => true, 'response' => json_decode($response, true)]);
         exit;
     }
+    public function sendAudio()
+    {
+        header('Content-Type: application/json');
+        
+        $conversationId = $_POST['conversation_id'] ?? null;
+        
+        if (!$conversationId || !isset($_FILES['audio'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing parameters']);
+            exit;
+        }
+
+        // Get User Phone
+        $conversation = $this->db->getConversationById($conversationId);
+        $userPhone = $conversation['user_id']; 
+
+        // Handle File Upload
+        $uploadDir = __DIR__ . '/../../public/uploads/audio/manual/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $extension = pathinfo($_FILES['audio']['name'], PATHINFO_EXTENSION);
+        if (!$extension) $extension = 'ogg'; // Default to ogg if blob
+        
+        $filename = 'manual_' . time() . '_' . uniqid() . '.' . $extension;
+        $targetFile = $uploadDir . $filename;
+        
+        if (!move_uploaded_file($_FILES['audio']['tmp_name'], $targetFile)) {
+             http_response_code(500);
+             echo json_encode(['error' => 'Failed to upload file']);
+             exit;
+        }
+
+        // Send to Python Interface (internal_send_audio)
+        $url = "http://localhost:3000/whatsapp/internal_send_audio";
+        // absolute path needed for python
+        $absolutePath = realpath($targetFile);
+        
+        $data = [
+            'to' => $userPhone,
+            'audio_path' => $absolutePath
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode >= 400) {
+             http_response_code(500);
+             echo json_encode(['error' => 'Failed to send via Python interface', 'details' => $response]);
+             exit;
+        }
+
+        echo json_encode(['success' => true, 'response' => json_decode($response, true)]);
+        exit;
+    }
 }

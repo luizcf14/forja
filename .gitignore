@@ -13,3 +13,7 @@ node_modules/
 *.sqlite
 public/uploads/
 lancedb_data/
+*.ogg
+*.mp3
+*.wav
+teamMemory.db
