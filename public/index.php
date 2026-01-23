@@ -42,6 +42,10 @@ $router->post('/api/optimize', 'AgentController@optimize');
 $router->get('/settings', 'SettingsController@index');
 $router->post('/settings', 'SettingsController@index');
 
+// Notifications
+$router->get('/notifications', 'NotificationController@index');
+$router->post('/notifications', 'NotificationController@index');
+
 // Conversations
 $router->get('/conversations', 'ConversationController@index');
 $router->get('/conversations/show', 'ConversationController@show');

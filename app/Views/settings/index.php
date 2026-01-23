@@ -92,6 +92,19 @@
 
     <!-- System Actions Section -->
     <div class="col-md-4">
+        <!-- Communication Tools -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-megaphone"></i> Comunicação</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Ferramentas de envio de mensagens.</p>
+                <a href="/notifications" class="btn btn-warning w-100 mb-2">
+                    <i class="bi bi-broadcast"></i> Notificação em Massa
+                </a>
+            </div>
+        </div>
+
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-dark text-white">
                 <h5 class="mb-0"><i class="bi bi-gear"></i> Sistema</h5>
