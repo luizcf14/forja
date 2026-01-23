@@ -98,6 +98,11 @@ class ConversationController extends Controller
         }
 
         $success = $this->db->setConversationAiStatus($conversationId, $status);
+        
+        if ($success) {
+            $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AI_STATUS_CHANGE', "Alterou status da IA para '$status' na conversa $conversationId");
+        }
+
         echo json_encode(['success' => $success, 'status' => $status]);
         exit;
     }
@@ -146,6 +151,16 @@ class ConversationController extends Controller
         }
 
         echo json_encode(['success' => true, 'response' => json_decode($response, true)]);
+        
+        
+        $logDetails = json_encode([
+            'type' => 'text',
+            'recipient' => $userPhone,
+            'content' => $content,
+            'description' => "Enviou mensagem manual para $userPhone"
+        ], JSON_UNESCAPED_UNICODE);
+        $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'MANUAL_MESSAGE_SEND', $logDetails);
+        
         exit;
     }
     public function sendAudio()
@@ -209,6 +224,17 @@ class ConversationController extends Controller
         }
 
         echo json_encode(['success' => true, 'response' => json_decode($response, true)]);
+        
+        
+        $audioUrl = '/uploads/audio/manual/' . $filename;
+        $logDetails = json_encode([
+            'type' => 'audio',
+            'recipient' => $userPhone,
+            'audio_url' => $audioUrl,
+            'description' => "Enviou áudio manual para $userPhone"
+        ], JSON_UNESCAPED_UNICODE);
+        $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'MANUAL_AUDIO_SEND', $logDetails);
+        
         exit;
     }
 }

@@ -29,8 +29,10 @@ class HomeController extends Controller
                 $_SESSION['user'] = $user['username'];
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['role'] = $user['role'];
+                $this->db->logAction($user['id'], $user['username'], 'LOGIN', 'Usuário realizou login com sucesso.');
                 $this->redirect('/');
             } else {
+                $this->db->logAction(null, $username, 'LOGIN_FAILED', 'Falha no login: credenciais inválidas.');
                 $error = "Invalid credentials";
                 $this->view('home/index', ['error' => $error]);
                 return;
@@ -38,6 +40,9 @@ class HomeController extends Controller
         }
 
         if (isset($_GET['logout'])) {
+            if (isset($_SESSION['user'])) {
+                $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'LOGOUT', 'Usuário realizou logout.');
+            }
             session_destroy();
             $this->redirect('/');
         }

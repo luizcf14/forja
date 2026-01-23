@@ -81,6 +81,33 @@ class Database
             value TEXT,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )");
+
+        // Create Audit Logs Table
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            username TEXT,
+            action TEXT NOT NULL,
+            details TEXT,
+            ip_address TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
+    }
+
+    // --- AUDIT LOGS ---
+
+    public function logAction($userId, $username, $action, $details = null)
+    {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+        $stmt = $this->pdo->prepare("INSERT INTO audit_logs (user_id, username, action, details, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+        return $stmt->execute([$userId, $username, $action, $details, $ip, date('Y-m-d H:i:s')]);
+    }
+
+    public function getAuditLogs($limit = 100)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ?");
+        $stmt->execute([$limit]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // --- SYSTEM SETTINGS ---

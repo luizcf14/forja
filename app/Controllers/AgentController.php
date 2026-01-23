@@ -62,6 +62,8 @@ class AgentController extends Controller
 
         if ($agentId) {
             $this->handleFileUploads($agentId);
+            
+            $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_CREATE', "Criou agente: $subject (ID: $agentId)");
 
             $_SESSION['success_message'] = "Agente criado com sucesso!";
             $this->redirect('/');
@@ -99,6 +101,8 @@ class AgentController extends Controller
         $this->db->updateAgent($id, $data);
         $this->handleFileUploads($id);
 
+        $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_UPDATE', "Atualizou agente: $subject (ID: $id)");
+
         $_SESSION['success_message'] = "Agente atualizado com sucesso!";
         $this->redirect('/');
     }
@@ -127,6 +131,7 @@ class AgentController extends Controller
 
                     if (move_uploaded_file($tmpName, $targetPath)) {
                         $this->db->addAgentDocument($agentId, $fileName);
+                        $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_UPLOAD', "Upload de arquivo para Agente $agentId: $fileName");
                     }
                 }
             }
@@ -166,6 +171,7 @@ class AgentController extends Controller
         }
 
         if ($this->db->deleteAgentDocument($docId)) {
+            $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_FILE_DELETE', "Arquivo excluído: " . $doc['filename']);
             header('Content-Type: application/json');
             echo json_encode(['success' => true]);
         } else {
@@ -211,6 +217,7 @@ class AgentController extends Controller
         }
 
         if ($this->db->deleteAgent($id)) {
+            $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_DELETE', "Excluiu agente: " . $agent['subject'] . " (ID: $id)");
             $_SESSION['success_message'] = "Agente excluído com sucesso!";
         } else {
              // Handle error

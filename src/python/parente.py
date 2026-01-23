@@ -110,6 +110,25 @@ def load_knowledge_base(kb_path_str: str) -> Optional[Any]:
         # traceback.print_exc()
         return None
 
+
+def get_model(model_type: str):
+    """Factory to get the appropriate model instance based on configuration."""
+    model_type = model_type.lower() if model_type else 'slow'
+    
+    provider = os.getenv(f"{model_type.upper()}_MODEL_PROVIDER", "gemini").lower()
+    model_id = os.getenv(f"{model_type.upper()}_MODEL_NAME", "gemini-2.5-flash")
+    host = os.getenv(f"{model_type.upper()}_MODEL_HOST", "http://localhost:11434")
+    
+    print(f"DEBUG: Loading {model_type} model: {provider}/{model_id}")
+
+    if provider == 'ollama':
+        return Ollama(id=model_id, host=host)
+    elif provider == 'gemini':
+         return Gemini(id=model_id)
+    else:
+        print(f"Warning: Unknown provider '{provider}', defaulting to Gemini")
+        return Gemini(id=model_id)
+
 def load_agents() -> List[Agent]:
     """Loads agents from the database and initializes them."""
     conn = get_db_connection()
@@ -183,14 +202,13 @@ def load_agents() -> List[Agent]:
                         print(f"  - Warning: Document not found: {kb_file}")
 
             # Initialize Agno Agent
-            # Using Gemini as default model as seen in optimizer.py, default to gemini-2.5-flash
             try:
-                agentModel = Gemini(id="gemini-2.5-flash")
-                if agent_data.get('type') == 'fast':
-                    print("Using fast agent model")
-                    agentModel = Ollama(id="gemma3-4b-it-qat", host="http://localhost:11434")
+                # Use helper to get model based on agent type ('Fast' or 'Slow')
+                agent_type = agent_data.get('type', 'slow').lower()
+                agentModel = get_model(agent_type)
+                
                 agent = Agent(
-                    model=agentModel, # Using a standard available model ID or the one from optimizer
+                    model=agentModel,
                     description=f"Agent for {agent_data['subject']}",
                     role=role,
                     instructions=instructions,
@@ -442,7 +460,7 @@ team = LoggingTeam(
     members=loaded_agents,
     delegate_to_all_members=True,
     tools=[AudioGenerator()],
-    model=Gemini(id="gemini-2.5-flash"),
+    model=get_model('slow'),
     respond_directly=False,
     markdown=True)
 

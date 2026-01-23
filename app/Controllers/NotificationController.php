@@ -53,8 +53,23 @@ class NotificationController {
                 
                 if ($failCount === 0) {
                     $message = "Mensagem enviada com sucesso para $sendCount usuários.";
+                    $logDetails = json_encode([
+                        'type' => 'mass_text',
+                        'recipient_count' => $sendCount,
+                        'content' => $text,
+                        'description' => "Enviou mensagem em massa para $sendCount usuários"
+                    ], JSON_UNESCAPED_UNICODE);
+                    $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'NOTIFICATION_SEND', $logDetails);
                 } else {
                     $error = "Enviado para $sendCount usuários. Falha em $failCount envios.";
+                    $logDetails = json_encode([
+                        'type' => 'mass_text',
+                        'recipient_count' => $sendCount,
+                        'fail_count' => $failCount,
+                        'content' => $text,
+                        'description' => "Tentativa de envio em massa (Sucesso: $sendCount, Falha: $failCount)"
+                    ], JSON_UNESCAPED_UNICODE);
+                    $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'NOTIFICATION_SEND', $logDetails);
                 }
             }
         }

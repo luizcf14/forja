@@ -124,6 +124,11 @@
                     <?php endif; ?>
                 </form>
 
+                <h6 class="fw-bold">Auditoria e Segurança</h6>
+                <a href="/audit" class="btn btn-outline-light w-100 mb-3 text-start">
+                    <i class="bi bi-shield-check"></i> Logs de Auditoria
+                </a>
+
                 <hr class="my-4">
 
                 <h6 class="fw-bold">Serviço Parente IA</h6>

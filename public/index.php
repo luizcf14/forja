@@ -46,6 +46,9 @@ $router->post('/settings', 'SettingsController@index');
 $router->get('/notifications', 'NotificationController@index');
 $router->post('/notifications', 'NotificationController@index');
 
+// Audit
+$router->get('/audit', 'AuditController@index');
+
 // Conversations
 $router->get('/conversations', 'ConversationController@index');
 $router->get('/conversations/show', 'ConversationController@show');
