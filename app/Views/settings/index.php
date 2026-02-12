@@ -107,6 +107,53 @@
                 </div>
             </div>
         </div>
+
+        <!-- User Requests Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-dark">
+                <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Pedidos dos Usuários</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Pedido</th>
+                                <th>Importância</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($userRequests)): ?>
+                                <?php foreach ($userRequests as $request): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($request['user_identifier'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($request['request_text'] ?? '') ?></td>
+                                        <td>
+                                            <?php 
+                                            $imp = $request['importance'] ?? 'normal';
+                                            $badgeClass = 'primary';
+                                            if ($imp === 'high') $badgeClass = 'danger';
+                                            if ($imp === 'low') $badgeClass = 'secondary';
+                                            ?>
+                                            <span class="badge bg-<?= $badgeClass ?>">
+                                                <?= ucfirst($imp) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= date('d/m/Y H:i', strtotime($request['created_at'] ?? 'now')) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Nenhum pedido registrado.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- System Actions Section -->

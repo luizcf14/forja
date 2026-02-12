@@ -14,6 +14,7 @@ from agents.factory import load_agents
 # Tools and Services
 from utils.whatsapp.whatsapp import Whatsapp
 from tools.audio_gen import AudioGenerator
+from tools.feature_request import FeatureRequestTool
 from services.analyzer import ConversationAnalyzer
 
 print(f"Searching for database at: {DB_PATH}")
@@ -53,7 +54,7 @@ team = ParenteTeam(
     role=parente_role,
     members=loaded_agents,
     delegate_to_all_members=True,
-    tools=[AudioGenerator()],
+    tools=[AudioGenerator(), FeatureRequestTool()],
     model=Gemini(id="gemini-2.5-flash"), # Parente's main model, maybe move to config too
     respond_directly=False,
     markdown=True

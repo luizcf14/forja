@@ -43,6 +43,9 @@
                         <label class="form-label fw-bold">Base de Conhecimento</label>
                         <input type="file" name="knowledge_base[]" class="form-control" accept=".pdf,.html" multiple>
                         <div class="form-text">Envie um ou mais documentos PDF ou HTML para contexto.</div>
+                        <div class="progress mt-2 d-none" id="uploadProgressContainer" style="height: 25px;">
+                             <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" id="uploadProgressBar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
                         
                         <?php 
                         // Fetch existing documents if in edit mode
@@ -214,6 +217,67 @@
                 error: function() {
                     alert('Erro de conexão ao tentar excluir o arquivo.');
                     btn.prop('disabled', false);
+                }
+            });
+        });
+
+        // Form Submission with Progress Bar
+        $('#agentForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const form = $(this);
+            const formData = new FormData(this);
+            const progressBar = $('#uploadProgressBar');
+            const progressContainer = $('#uploadProgressContainer');
+            const submitBtn = form.find('button[type="submit"]');
+
+            // Reset progress
+            progressBar.width('0%').text('0%').removeClass('bg-danger').addClass('bg-success');
+            progressContainer.removeClass('d-none');
+            submitBtn.prop('disabled', true).text('Enviando...');
+
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", function(evt) {
+                        if (evt.lengthComputable) {
+                            const percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                            progressBar.width(percentComplete + '%').text(percentComplete + '%');
+                        }
+                    }, false);
+                    return xhr;
+                },
+                success: function(response, status, xhr) {
+                    // response should be JSON object { success: true, redirect: ... }
+                    // If content-type is json, jquery parses it automatically.
+                    
+                    if (response.success) {
+                        progressBar.addClass('bg-success').text('Concluído!');
+                        setTimeout(function() {
+                             window.location.href = response.redirect || '/'; 
+                        }, 500);
+                    } else {
+                        // Fallback if success=false but 200 OK (unlikely with current backend logic but good safety)
+                        progressBar.addClass('bg-danger').text('Erro!');
+                        alert('Falha: ' + (response.error || 'Erro desconhecido'));
+                        submitBtn.prop('disabled', false).text('Salvar');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    progressBar.addClass('bg-danger').text('Erro!');
+                    
+                    let errorMsg = 'Falha no upload: ' + error;
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    }
+                    
+                    alert(errorMsg);
+                    submitBtn.prop('disabled', false).text('Salvar');
                 }
             });
         });

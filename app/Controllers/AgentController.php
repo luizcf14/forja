@@ -65,9 +65,21 @@ class AgentController extends Controller
             
             $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_CREATE', "Criou agente: $subject (ID: $agentId)");
 
+            if ($this->isAjax()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'redirect' => '/']);
+                exit;
+            }
+
             $_SESSION['success_message'] = "Agente criado com sucesso!";
             $this->redirect('/');
         } else {
+            if ($this->isAjax()) {
+                header('Content-Type: application/json');
+                http_response_code(400); // Bad Request or Internal Server Error
+                echo json_encode(['error' => 'Failed to create agent']);
+                exit;
+            }
             // Handle error
             $this->view('agents/form', ['error' => 'Failed to create agent', 'isEdit' => false]);
         }
@@ -102,6 +114,12 @@ class AgentController extends Controller
         $this->handleFileUploads($id);
 
         $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_UPDATE', "Atualizou agente: $subject (ID: $id)");
+
+        if ($this->isAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'redirect' => '/']);
+            exit;
+        }
 
         $_SESSION['success_message'] = "Agente atualizado com sucesso!";
         $this->redirect('/');
@@ -304,5 +322,8 @@ class AgentController extends Controller
             echo json_encode(['error' => 'Raw output: ' . $output]);
         }
         exit;
+    }
+    private function isAjax() {
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     }
 }

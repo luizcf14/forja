@@ -132,6 +132,7 @@ class SettingsController extends Controller
         }
 
         $serviceLogs = $this->getServiceLogs();
+        $userRequests = $this->db->getUserRequests();
 
         $this->view('settings/index', [
             'users' => $users, 
@@ -140,7 +141,8 @@ class SettingsController extends Controller
             'gitOutput' => $gitOutput,
             'servicePid' => $servicePid,
             'isServiceRunning' => $isServiceRunning,
-            'serviceLogs' => $serviceLogs
+            'serviceLogs' => $serviceLogs,
+            'userRequests' => $userRequests
         ]);
     }
 
