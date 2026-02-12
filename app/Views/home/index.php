@@ -16,11 +16,11 @@
                     <form method="POST" action="/">
                         <div class="mb-3">
                             <label class="form-label text-muted">Usuário</label>
-                            <input type="text" name="username" class="form-control form-control-lg" value="admin">
+                            <input type="text" name="username" class="form-control form-control-lg" value="">
                         </div>
                         <div class="mb-4">
                             <label class="form-label text-muted">Senha</label>
-                            <input type="password" name="password" class="form-control form-control-lg" value="password">
+                            <input type="password" name="password" class="form-control form-control-lg" value="">
                         </div>
                         <button type="submit" name="login" class="btn btn-primary w-100 btn-lg">Entrar</button>
                     </form>

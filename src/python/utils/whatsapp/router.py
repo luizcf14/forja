@@ -14,53 +14,18 @@ from agno.tools.whatsapp import WhatsAppTools
 from agno.utils.log import log_error, log_info, log_warning
 from agno.utils.whatsapp import get_media_async, send_image_message_async, typing_indicator_async, upload_media_async
 
-# Import sqlite3 for DB check
-import sqlite3
 from pathlib import Path
 
 # Fix incorrect import if present, though validate_webhook_signature might need fixing too if it was 'app...'
 # The user file had: from app.utils.whatsapp.security import validate_webhook_signature
 # I should change that to relative too if it exists.
 from .security import validate_webhook_signature
-
-
-# Database Path (Assuming relative to project root similar to parente.py)
-# router.py is in src/python/utils/whatsapp/
-# PROJECT_ROOT is ../../../..
-SCRIPT_DIR = Path(__file__).parent.absolute()
-# src/python/utils/whatsapp -> src/python/utils -> src/python -> src -> root
-PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent.parent
-DB_PATH = PROJECT_ROOT / "database.sqlite"
+from core.config import PROJECT_ROOT
+from core.repositories import ConversationRepository
 
 def get_ai_status(phone_number: str) -> str:
     """Check AI status for a given phone number (user_id)."""
-    if not DB_PATH.exists():
-        return 'active'
-    
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        # Check conversations table
-        # 1. Try with 'wa:' prefix first (new format)
-        wa_id = f"wa:{phone_number}"
-        cursor.execute("SELECT ai_status FROM conversations WHERE user_id = ?", (wa_id,))
-        row = cursor.fetchone()
-        
-        if not row:
-            # 2. Fallback to raw phone number (old format)
-            cursor.execute("SELECT ai_status FROM conversations WHERE user_id = ?", (phone_number,))
-            row = cursor.fetchone()
-        
-        conn.close()
-        
-        if row:
-            return row['ai_status'] # 'active' or 'paused'
-        return 'active'
-    except Exception as e:
-        log_error(f"Error checking AI status: {e}")
-        return 'active'
+    return ConversationRepository.get_ai_status(phone_number)
 
 
 from pydantic import BaseModel
@@ -373,7 +338,7 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
             
             # --- AI PAUSE LOGIC ---
             with open("debug_log.txt", "a") as f:
-                f.write(f"DEBUG: Checking AI status for {phone_number} using DB at {DB_PATH}\n")
+                f.write(f"DEBUG: Checking AI status for {phone_number}\n")
             
             status = get_ai_status(phone_number)
             
