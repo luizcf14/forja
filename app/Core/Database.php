@@ -62,8 +62,22 @@ class Database
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id TEXT UNIQUE NOT NULL,
             last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            ai_status TEXT DEFAULT 'active'
+            ai_status TEXT DEFAULT 'active',
+            sentiment TEXT,
+            topic TEXT,
+            last_analyzed_at DATETIME
         )");
+
+        // Add columns if they don't exist (Migration logic for existing DB)
+        try {
+            $this->pdo->exec("ALTER TABLE conversations ADD COLUMN sentiment TEXT");
+        } catch (Exception $e) {}
+        try {
+            $this->pdo->exec("ALTER TABLE conversations ADD COLUMN topic TEXT");
+        } catch (Exception $e) {}
+        try {
+            $this->pdo->exec("ALTER TABLE conversations ADD COLUMN last_analyzed_at DATETIME");
+        } catch (Exception $e) {}
 
         // Create Messages Table
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS messages (
@@ -174,6 +188,12 @@ class Database
     {
         $stmt = $this->pdo->prepare("UPDATE conversations SET ai_status = ? WHERE id = ?");
         return $stmt->execute([$status, $conversationId]);
+    }
+
+    public function updateConversationAnalysis($conversationId, $sentiment, $topic)
+    {
+        $stmt = $this->pdo->prepare("UPDATE conversations SET sentiment = ?, topic = ? WHERE id = ?");
+        return $stmt->execute([$sentiment, $topic, $conversationId]);
     }
 
 
@@ -346,6 +366,12 @@ class Database
         } catch (PDOException $e) {
             return false; // Likely username duplicate
         }
+    }
+
+    public function updateUserPassword($id, $newHash)
+    {
+        $stmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        return $stmt->execute([$newHash, $id]);
     }
 
     public function deleteUser($id)

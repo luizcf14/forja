@@ -61,6 +61,35 @@ class SettingsController extends Controller
             }
         }
 
+        // Handle Change Password
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+            $currentPassword = $_POST['current_password'] ?? '';
+            $newPassword = $_POST['new_password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
+
+            if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+                $error = "Todos os campos de senha são obrigatórios.";
+            } elseif ($newPassword !== $confirmPassword) {
+                $error = "A nova senha e a confirmação não coincidem.";
+            } else {
+                // Verify current password
+                $user = $this->db->getUserById($_SESSION['user_id']);
+                if ($user && password_verify($currentPassword, $user['password'])) {
+                    // Update password
+                    $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+                    if ($this->db->updateUserPassword($_SESSION['user_id'], $newHash)) {
+                        $message = "Senha alterada com sucesso.";
+                        $this->db->logAction($_SESSION['user_id'], $_SESSION['user'], 'PASSWORD_CHANGE', "Alterou a própria senha.");
+                    } else {
+                        $error = "Erro ao atualizar a senha no banco de dados.";
+                    }
+                } else {
+                    $error = "Senha atual incorreta.";
+                    $this->db->logAction($_SESSION['user_id'], $_SESSION['user'], 'PASSWORD_CHANGE_FAILED', "Tentativa falha de alterar senha (senha atual incorreta).");
+                }
+            }
+        }
+
         // Handle Service Control (Start/Stop)
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($_POST['start_service'])) {
@@ -133,7 +162,7 @@ class SettingsController extends Controller
     private function startParenteService()
     {
         $projectRoot = realpath(__DIR__ . '/../../');
-        $scriptPath = $projectRoot . '/src/python/parente.py';
+        $scriptPath = $projectRoot . '/src/python/main.py';
         
         // Ensure log directory exists
         $logDir = $projectRoot . '/storage/logs';

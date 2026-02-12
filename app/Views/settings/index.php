@@ -44,6 +44,25 @@
                     </form>
                 </div>
 
+                <!-- Change Password Form -->
+                <div class="mb-4 border-bottom pb-4">
+                    <h6 class="fw-bold mb-3">Alterar Sua Senha</h6>
+                    <form method="POST" class="row g-3">
+                        <div class="col-md-4">
+                            <input type="password" name="current_password" class="form-control" placeholder="Senha Atual" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="password" name="new_password" class="form-control" placeholder="Nova Senha" required>
+                        </div>
+                         <div class="col-md-3">
+                            <input type="password" name="confirm_password" class="form-control" placeholder="Confirmar" required>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" name="change_password" class="btn btn-warning w-100">Alterar</button>
+                        </div>
+                    </form>
+                </div>
+
                 <!-- Users List -->
                 <h6 class="fw-bold mb-3">Usuários Existentes</h6>
                 <div class="table-responsive">

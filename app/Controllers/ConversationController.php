@@ -75,9 +75,7 @@ class ConversationController extends Controller
         $aiStatus = $this->db->getConversationAiStatus($conversationId);
         
         // Enhance messages/response if needed, or better, make a separate endpoint for status polling
-        // For simplicity, let's just return messages here.
-        // Ideally we should wrap this in a { messages: [], meta: { ai_status: ... } } but that breaks existing frontend.
-        // We will make a separate endpoint for status toggling which returns status.
+        header('X-AI-Status: ' . $aiStatus);
         
         echo json_encode($messages);
         exit;
@@ -126,8 +124,6 @@ class ConversationController extends Controller
         $userPhone = $conversation['user_id']; 
 
         // Send to Python Interface (internal_send)
-        // Python handles logging to DB now
-        
         $url = "http://localhost:3000/whatsapp/internal_send";
         $data = [
             'to' => $userPhone,
@@ -151,7 +147,6 @@ class ConversationController extends Controller
         }
 
         echo json_encode(['success' => true, 'response' => json_decode($response, true)]);
-        
         
         $logDetails = json_encode([
             'type' => 'text',
@@ -225,7 +220,6 @@ class ConversationController extends Controller
 
         echo json_encode(['success' => true, 'response' => json_decode($response, true)]);
         
-        
         $audioUrl = '/uploads/audio/manual/' . $filename;
         $logDetails = json_encode([
             'type' => 'audio',
@@ -235,6 +229,36 @@ class ConversationController extends Controller
         ], JSON_UNESCAPED_UNICODE);
         $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'MANUAL_AUDIO_SEND', $logDetails);
         
+        exit;
+    }
+
+    public function analyze()
+    {
+        header('Content-Type: application/json');
+        $conversationId = $_GET['id'] ?? null;
+        $force = isset($_GET['force']) && $_GET['force'] == 1; 
+        
+        if (!$conversationId) {
+            echo json_encode(['error' => 'Missing ID']);
+            exit;
+        }
+
+        $url = "http://localhost:3000/analyze_conversation";
+        $data = [
+            'id' => $conversationId,
+            'force' => $force
+        ];
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        
+        $response = curl_exec($ch);
+        curl_close($ch);
+        
+        echo $response;
         exit;
     }
 }

@@ -15,7 +15,11 @@
                     </div>
                     <div>
                         <h6 class="mb-0 fw-bold"><?= htmlspecialchars($conversation['user_id']) ?></h6>
-                        <small class="text-white-50">Conversa via WhatsApp</small>
+                        <div class="d-flex align-items-center gap-2">
+                            <small class="text-white-50">Conversa via WhatsApp</small>
+                            <span id="sentimentBadge" class="badge bg-secondary d-none"></span>
+                            <span id="topicBadge" class="badge bg-dark border border-secondary text-light d-none"></span>
+                        </div>
                     </div>
                 </div>
                 <!-- AI Interruption Toggle -->
@@ -104,6 +108,15 @@
     const conversationId = <?= $conversation['id'] ?>;
     let lastMessageId = <?= !empty($messages) ? end($messages)['id'] : 0 ?>;
     let aiStatus = '<?= $aiStatus ?>'; // 'active' or 'paused'
+    
+    // Initial Tags (from PHP if available)
+    <?php if(!empty($conversation['sentiment'])): ?>
+        updateSentimentBadge('<?= $conversation['sentiment'] ?>');
+    <?php endif; ?>
+    <?php if(!empty($conversation['topic'])): ?>
+        updateTopicBadge('<?= $conversation['topic'] ?>');
+    <?php endif; ?>
+
     const chatBody = document.querySelector('.card-body');
     const toggleBtn = document.getElementById('toggleAiBtn');
     const chatInput = document.getElementById('chatInput');
@@ -119,6 +132,7 @@
     // Scroll to bottom on load
     window.onload = function() {
         scrollToBottom();
+        triggerAnalysis();
     }
 
     function scrollToBottom() {
@@ -345,7 +359,6 @@
         });
     }
 
-    // Add pulse animation style
     const style = document.createElement('style');
     style.innerHTML = `
         @keyframes pulse {
@@ -358,6 +371,52 @@
         }
     `;
     document.head.appendChild(style);
+
+    // Analysis Logic
+    function triggerAnalysis() {
+        console.log("Triggering analysis...");
+        // $.ajax({
+        //     url: '/conversations/analyze',
+        //     data: { id: conversationId },
+        //     success: function(response) {
+        //         console.log("Analysis Result:", response);
+        //         if (response.success) {
+        //             updateSentimentBadge(response.sentiment);
+        //             updateTopicBadge(response.topic);
+        //         } else if (response.status === 'skipped') {
+        //             console.log("Analysis skipped:", response.reason);
+        //         }
+        //     },
+        //     error: function(err) {
+        //         console.error("Analysis Failed", err);
+        //     }
+        // });
+    }
+
+    function updateSentimentBadge(sentiment) {
+        const badge = document.getElementById('sentimentBadge');
+        if (!badge || !sentiment) return;
+        
+        const sColors = {
+            'Neutro': 'secondary',
+            'Contente': 'info',
+            'Feliz': 'success',
+            'Raiva': 'danger',
+            'Frustração': 'warning'
+        };
+        
+        const color = sColors[sentiment] || 'secondary';
+        badge.className = `badge bg-${color}`;
+        badge.textContent = sentiment;
+        badge.classList.remove('d-none');
+    }
+
+    function updateTopicBadge(topic) {
+        const badge = document.getElementById('topicBadge');
+        if (!badge || !topic) return;
+        badge.textContent = topic;
+        badge.classList.remove('d-none');
+    }
 </script>
 
 <?php
