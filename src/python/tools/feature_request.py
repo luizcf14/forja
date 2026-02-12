@@ -7,13 +7,14 @@ class FeatureRequestTool(Toolkit):
         super().__init__(name="feature_request_tool")
         self.register(self.log_feature_request)
 
-    def log_feature_request(self, user_identifier: str, request_description: str, importance: str = "normal") -> str:
+    def log_feature_request(self, user_identifier: str, request_description: str, original_user_message: str, importance: str = "normal") -> str:
         """
         Logs a feature request or reported missing capability from a user into the database.
         Use this tool when a user explicitly asks for a feature we don't have, or mentions something is important but missing.
 
         :param user_identifier: The identifier of the user (e.g., phone number or username).
         :param request_description: A concise description of what the user requested.
+        :param original_user_message: The exact message sent by the user that prompted this request.
         :param importance: The importance level indicated by the user. Can be 'high', 'normal', or 'low'. Defaults to 'normal'.
         :return: A confirmation message.
         """
@@ -22,8 +23,8 @@ class FeatureRequestTool(Toolkit):
             cursor = conn.cursor()
             
             cursor.execute(
-                "INSERT INTO user_requests (user_identifier, request_text, importance, created_at) VALUES (?, ?, ?, datetime('now'))",
-                (user_identifier, request_description, importance)
+                "INSERT INTO user_requests (user_identifier, request_text, importance, original_message, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
+                (user_identifier, request_description, importance, original_user_message)
             )
             
             conn.commit()

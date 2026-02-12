@@ -114,6 +114,20 @@ class SettingsController extends Controller
                 } else {
                     $error = "Falha ao reiniciar o serviço.";
                 }
+                }
+            }
+        }
+        }
+
+        // Handle Delete User Request
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_request'])) {
+            $requestId = $_POST['request_id'] ?? null;
+            if ($requestId) {
+                if ($this->db->deleteUserRequest($requestId)) {
+                    $message = "Pedido excluído com sucesso.";
+                } else {
+                    $error = "Erro ao excluir pedido.";
+                }
             }
         }
 

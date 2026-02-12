@@ -120,8 +120,10 @@
                             <tr>
                                 <th>Usuário</th>
                                 <th>Pedido</th>
+                                <th>Mensagem Original</th>
                                 <th>Importância</th>
                                 <th>Data</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -130,6 +132,7 @@
                                     <tr>
                                         <td><?= htmlspecialchars($request['user_identifier'] ?? '') ?></td>
                                         <td><?= htmlspecialchars($request['request_text'] ?? '') ?></td>
+                                        <td><small class="text-muted"><?= htmlspecialchars($request['original_message'] ?? '-') ?></small></td>
                                         <td>
                                             <?php 
                                             $imp = $request['importance'] ?? 'normal';
@@ -142,6 +145,14 @@
                                             </span>
                                         </td>
                                         <td><?= date('d/m/Y H:i', strtotime($request['created_at'] ?? 'now')) ?></td>
+                                        <td>
+                                            <form method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este pedido?');">
+                                                <input type="hidden" name="request_id" value="<?= $request['id'] ?>">
+                                                <button type="submit" name="delete_request" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>

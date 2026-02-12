@@ -107,15 +107,23 @@ class Database
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )");
 
-        // Create User Requests Table
+
+
+        // Create User Requests Table (with original_message)
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS user_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_identifier TEXT,
             request_text TEXT NOT NULL,
             importance TEXT DEFAULT 'normal',
             status TEXT DEFAULT 'pending',
+            original_message TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )");
+
+        // Add original_message column if not exists
+        try {
+            $this->pdo->exec("ALTER TABLE user_requests ADD COLUMN original_message TEXT");
+        } catch (Exception $e) {}
     }
 
     // --- AUDIT LOGS ---
@@ -397,15 +405,21 @@ class Database
 
     // --- USER REQUESTS ---
 
-    public function insertUserRequest($userIdentifier, $requestText, $importance = 'normal')
+    public function insertUserRequest($userIdentifier, $requestText, $importance = 'normal', $originalMessage = '')
     {
-        $stmt = $this->pdo->prepare("INSERT INTO user_requests (user_identifier, request_text, importance, created_at) VALUES (?, ?, ?, ?)");
-        return $stmt->execute([$userIdentifier, $requestText, $importance, date('Y-m-d H:i:s')]);
+        $stmt = $this->pdo->prepare("INSERT INTO user_requests (user_identifier, request_text, importance, original_message, created_at) VALUES (?, ?, ?, ?, ?)");
+        return $stmt->execute([$userIdentifier, $requestText, $importance, $originalMessage, date('Y-m-d H:i:s')]);
     }
 
     public function getUserRequests()
     {
         $stmt = $this->pdo->query("SELECT * FROM user_requests ORDER BY created_at DESC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function deleteUserRequest($id)
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM user_requests WHERE id = ?");
+        return $stmt->execute([$id]);
     }
 }
