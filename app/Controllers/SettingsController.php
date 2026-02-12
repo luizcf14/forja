@@ -114,10 +114,9 @@ class SettingsController extends Controller
                 } else {
                     $error = "Falha ao reiniciar o serviço.";
                 }
-                }
             }
         }
-        }
+
 
         // Handle Delete User Request
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_request'])) {
