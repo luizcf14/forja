@@ -61,17 +61,31 @@ class AgentController extends Controller
         ]);
 
         if ($agentId) {
-            $this->handleFileUploads($agentId);
+            $uploadErrors = $this->handleFileUploads($agentId);
             
             $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_CREATE', "Criou agente: $subject (ID: $agentId)");
 
-            if ($this->isAjax()) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'redirect' => '/']);
-                exit;
+            if (!empty($uploadErrors)) {
+                if ($this->isAjax()) {
+                    header('Content-Type: application/json');
+                    // Return success but with warnings/errors about files
+                    echo json_encode([
+                        'success' => false, // Or true with warnings? Better false to alert user clearly
+                        'error' => 'Agente criado, mas houve erro no upload: ' . implode(', ', $uploadErrors),
+                        'redirect' => '/' // Optional, maybe stay on page to fix?
+                    ]);
+                    exit;
+                }
+                $_SESSION['error_message'] = "Agente criado, mas erro no upload: " . implode(', ', $uploadErrors);
+            } else {
+                if ($this->isAjax()) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'redirect' => '/']);
+                    exit;
+                }
+                $_SESSION['success_message'] = "Agente criado com sucesso!";
             }
 
-            $_SESSION['success_message'] = "Agente criado com sucesso!";
             $this->redirect('/');
         } else {
             if ($this->isAjax()) {
@@ -111,27 +125,43 @@ class AgentController extends Controller
         ];
 
         $this->db->updateAgent($id, $data);
-        $this->handleFileUploads($id);
+        $uploadErrors = $this->handleFileUploads($id);
 
         $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_UPDATE', "Atualizou agente: $subject (ID: $id)");
 
-        if ($this->isAjax()) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'redirect' => '/']);
-            exit;
+        if (!empty($uploadErrors)) {
+             if ($this->isAjax()) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false, 
+                    'error' => 'Agente atualizado, mas houve erro no upload: ' . implode(', ', $uploadErrors)
+                ]);
+                exit;
+            }
+             $_SESSION['error_message'] = "Agente atualizado, mas erro no upload: " . implode(', ', $uploadErrors);
+        } else {
+            if ($this->isAjax()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'redirect' => '/']);
+                exit;
+            }
+            $_SESSION['success_message'] = "Agente atualizado com sucesso!";
         }
 
-        $_SESSION['success_message'] = "Agente atualizado com sucesso!";
         $this->redirect('/');
     }
 
     private function handleFileUploads($agentId)
     {
+        $errors = [];
         if (isset($_FILES['knowledge_base'])) {
             $files = $_FILES['knowledge_base'];
             $uploadDir = __DIR__ . '/../../public/uploads/';
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+                if (!mkdir($uploadDir, 0777, true)) {
+                    $errors[] = "Falha ao criar diretório de upload.";
+                    return $errors;
+                }
             }
 
             // Normalize files array
@@ -139,9 +169,10 @@ class AgentController extends Controller
             
             for ($i = 0; $i < $fileCount; $i++) {
                 $error = is_array($files['error']) ? $files['error'][$i] : $files['error'];
+                $name = is_array($files['name']) ? $files['name'][$i] : $files['name'];
+
                 if ($error === UPLOAD_ERR_OK) {
                     $tmpName = is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
-                    $name = is_array($files['name']) ? $files['name'][$i] : $files['name'];
                     
                     $fileName = basename($name);
                     $fileName = time() . '_' . $i . '_' . $fileName; // Unique name
@@ -150,10 +181,37 @@ class AgentController extends Controller
                     if (move_uploaded_file($tmpName, $targetPath)) {
                         $this->db->addAgentDocument($agentId, $fileName);
                         $this->db->logAction($_SESSION['user_id'] ?? 0, $_SESSION['user'], 'AGENT_UPLOAD', "Upload de arquivo para Agente $agentId: $fileName");
+                    } else {
+                        $errors[] = "Falha ao mover arquivo enviado: $name. Verifique permissões.";
+                    }
+                } elseif ($error !== UPLOAD_ERR_NO_FILE) {
+                    // Handle specific upload errors
+                    switch ($error) {
+                        case UPLOAD_ERR_INI_SIZE:
+                            $errors[] = "O arquivo '$name' excede o tamanho máximo permitido pelo servidor (upload_max_filesize).";
+                            break;
+                        case UPLOAD_ERR_FORM_SIZE:
+                            $errors[] = "O arquivo '$name' excede o tamanho máximo permitido pelo formulário.";
+                            break;
+                        case UPLOAD_ERR_PARTIAL:
+                            $errors[] = "O arquivo '$name' foi enviado apenas parcialmente.";
+                            break;
+                        case UPLOAD_ERR_NO_TMP_DIR:
+                            $errors[] = "Pasta temporária ausente.";
+                            break;
+                        case UPLOAD_ERR_CANT_WRITE:
+                            $errors[] = "Falha ao gravar o arquivo '$name' em disco.";
+                            break;
+                        case UPLOAD_ERR_EXTENSION:
+                            $errors[] = "Uma extensão do PHP interrompeu o upload do arquivo '$name'.";
+                            break;
+                        default:
+                            $errors[] = "Erro desconhecido ao enviar arquivo '$name'. Código: $error";
                     }
                 }
             }
         }
+        return $errors;
     }
 
     public function deleteFile()

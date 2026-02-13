@@ -262,9 +262,10 @@
                              window.location.href = response.redirect || '/'; 
                         }, 500);
                     } else {
-                        // Fallback if success=false but 200 OK (unlikely with current backend logic but good safety)
-                        progressBar.addClass('bg-danger').text('Erro!');
-                        alert('Falha: ' + (response.error || 'Erro desconhecido'));
+                        progressBar.removeClass('bg-success').addClass('bg-danger').text('Erro!');
+                        // Check if we have a specific error message from the backend
+                        let errorMsg = response.error || 'Erro desconhecido';
+                        alert('Falha: ' + errorMsg);
                         submitBtn.prop('disabled', false).text('Salvar');
                     }
                 },
