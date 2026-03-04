@@ -41,6 +41,16 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS agent_documents (
 )");
 echo "Table 'agent_documents' checked/created.\n";
 
+// Create Communication Evaluations Table
+$pdo->exec("CREATE TABLE IF NOT EXISTS communication_evaluations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_identifier TEXT NOT NULL,
+    trigger_message TEXT NOT NULL,
+    last_messages TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)");
+echo "Table 'communication_evaluations' checked/created.\n";
+
 // Seed Admin User
 $adminUser = 'luizcf14';
 $adminPass = 'qazx74123';
