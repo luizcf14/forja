@@ -130,6 +130,18 @@ class SettingsController extends Controller
             }
         }
 
+        // Handle Delete Communication Evaluation
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_evaluation'])) {
+            $evalId = $_POST['evaluation_id'] ?? null;
+            if ($evalId) {
+                if ($this->db->deleteCommunicationEvaluation($evalId)) {
+                    $message = "Avaliação excluída com sucesso.";
+                } else {
+                    $error = "Erro ao excluir avaliação.";
+                }
+            }
+        }
+
         if (isset($gitOutput) && !empty($gitOutput)) {
              // Keep git output logic... or cleaner: 
         }
@@ -146,6 +158,7 @@ class SettingsController extends Controller
 
         $serviceLogs = $this->getServiceLogs();
         $userRequests = $this->db->getUserRequests();
+        $communicationEvaluations = $this->db->getCommunicationEvaluations();
 
         $this->view('settings/index', [
             'users' => $users, 
@@ -155,7 +168,8 @@ class SettingsController extends Controller
             'servicePid' => $servicePid,
             'isServiceRunning' => $isServiceRunning,
             'serviceLogs' => $serviceLogs,
-            'userRequests' => $userRequests
+            'userRequests' => $userRequests,
+            'communicationEvaluations' => $communicationEvaluations
         ]);
     }
 

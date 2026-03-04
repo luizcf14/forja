@@ -460,7 +460,7 @@ team = LoggingTeam(
     members=loaded_agents,
     delegate_to_all_members=True,
     tools=[AudioGenerator()],
-    model=get_model('slow'),
+    model=Gemini(id="gemini-2.5-flash"),
     respond_directly=False,
     markdown=True)
 
@@ -469,6 +469,40 @@ agent_os = AgentOS(
     interfaces=[Whatsapp(team=team)],
 )
 app = agent_os.get_app()
+
+from fastapi import Request
+import json
+
+from services.analyzer import ConversationAnalyzer
+
+@app.post("/analyze_conversation")
+async def analyze_conversation(request: Request):
+    """Endpoint to analyze conversation sentiment and topic."""
+    data = await request.json()
+    conversation_id = data.get("id")
+    force = data.get("force", False)
+    
+    if not conversation_id:
+        return {"error": "Missing conversation ID"}
+    
+    conn = get_db_connection()
+    if not conn:
+        return {"error": "Database connection failed"}
+        
+    try:
+        # Using slow model (Gemini) to avoid errors
+        model = get_model('slow')
+        analyzer = ConversationAnalyzer(model)
+        
+        result = analyzer.analyze(conversation_id, conn, force=force)
+        
+        conn.close()
+        return result
+        
+    except Exception as e:
+        if conn: conn.close()
+        print(f"Analysis endpoint error: {e}")
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     agent_os.serve(app="parente:app", host="0.0.0.0", port=3000, reload=True)

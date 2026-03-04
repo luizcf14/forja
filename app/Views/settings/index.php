@@ -165,6 +165,60 @@
                 </div>
             </div>
         </div>
+
+        <!-- Communication Evaluations Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-chat-left-dots"></i> Avaliações de Comunicação (IA Não Entendeu)</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="accordionEvaluations">
+                    <?php if (!empty($communicationEvaluations)): ?>
+                        <?php foreach ($communicationEvaluations as $index => $eval): ?>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingEval<?= $eval['id'] ?>">
+                                    <button class="accordion-button <?= $index > 0 ? 'collapsed' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEval<?= $eval['id'] ?>" aria-expanded="<?= $index === 0 ? 'true' : 'false' ?>" aria-controls="collapseEval<?= $eval['id'] ?>">
+                                        <strong><?= htmlspecialchars($eval['user_identifier']) ?></strong> 
+                                        &nbsp;-&nbsp;<span class="text-truncate" style="max-width: 250px;"><?= htmlspecialchars($eval['trigger_message']) ?></span>
+                                        &nbsp;<small class="text-muted ms-auto"><?= date('d/m/Y H:i', strtotime($eval['created_at'])) ?></small>
+                                    </button>
+                                </h2>
+                                <div id="collapseEval<?= $eval['id'] ?>" class="accordion-collapse collapse <?= $index === 0 ? 'show' : '' ?>" aria-labelledby="headingEval<?= $eval['id'] ?>" data-bs-parent="#accordionEvaluations">
+                                    <div class="accordion-body">
+                                        <p><strong>Mensagem Gatilho:</strong> <?= htmlspecialchars($eval['trigger_message']) ?></p>
+                                        <h6 class="fw-bold mt-3">Últimas Mensagens (Contexto):</h6>
+                                        <div class="bg-light p-3 rounded mb-3" style="max-height: 300px; overflow-y: auto;">
+                                            <?php 
+                                            $messages = json_decode($eval['last_messages'], true);
+                                            if (is_array($messages)) {
+                                                foreach ($messages as $msg) {
+                                                    $senderClass = $msg['sender'] === 'user' ? 'text-primary' : 'text-success';
+                                                    $senderName = $msg['sender'] === 'user' ? 'Usuário' : 'IA';
+                                                    echo "<p class='mb-1'><strong class='{$senderClass}'>{$senderName}</strong> <small class='text-muted'>({$msg['created_at']})</small>:<br>" . nl2br(htmlspecialchars($msg['content'])) . "</p>";
+                                                }
+                                            } else {
+                                                echo "<p class='text-muted'>Nenhum contexto válido encontrado.</p>";
+                                            }
+                                            ?>
+                                        </div>
+                                        <div class="text-end">
+                                            <form method="POST" onsubmit="return confirm('Excluir esta avaliação de comunicação?');">
+                                                <input type="hidden" name="evaluation_id" value="<?= $eval['id'] ?>">
+                                                <button type="submit" name="delete_evaluation" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i> Excluir Avaliação
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="text-center text-muted my-3">Nenhuma avaliação de falha de comunicação registrada.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- System Actions Section -->

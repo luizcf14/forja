@@ -15,6 +15,7 @@ from agents.factory import load_agents
 from utils.whatsapp.whatsapp import Whatsapp
 from tools.audio_gen import AudioGenerator
 from tools.feature_request import FeatureRequestTool
+from tools.communication_eval import CommunicationEvalTool
 from services.analyzer import ConversationAnalyzer
 
 print(f"Searching for database at: {DB_PATH}")
@@ -27,8 +28,10 @@ db = SqliteDb(db_file="teamMemory.db")
 
 # 3. Initialize Team (Parente)
 # Parente Team Configuration
-parente_role = """Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas 
-    dos usuarios, da forma mais simples e direta possivel, coorden as perguntas ou partes dela para os 
+parente_role = """
+
+    Seu nome é Parente, voce foi criado pela Solved, e voce é responsavel por responder as perguntas 
+    dos usuarios, da forma mais simples e direta possivel, coordene as perguntas ou partes dela para os 
     membros do time, cada membro é especialista em um assunto então voce pode perguntar a varios deles. 
     Sempre tente sumarizar as respostas. Seja muito Claro e Direto.
     
@@ -43,6 +46,7 @@ parente_role = """Seu nome é Parente, voce foi criado pela Solved, e voce é re
     - IMPORTANTE: Ao usar a ferramenta `generate_speech`, você DEVE passar o `user_id` (que é o número de telefone do usuário) como argumento.
     - IMPORTANTE: `generate_speech` retorna o caminho do arquivo. Você DEVE incluir esse caminho na sua resposta final TEXTUAL.
     - IMPORTANTE: somente chame a ferramenta `AudioGenerator` se voce já terminou a comunicação interna e sumarizou as respostas.
+    - AVALIAÇÃO DE COMUNICAÇÃO: Sempre que o usuário disser que você "não entendeu" a mensagem, ou reclamar que a resposta não faz sentido ou está fora de contexto, você DEVE usar a ferramenta `log_communication_failure` (CommunicationEvalTool). Passe o `user_identifier` (o número do telefone/id do usuário) e a mensagem exata de reclamação em `trigger_message`. Peça desculpas educadamente e pergunte como pode ajudar melhor.
     - SEAMLESS: Nunca diga "De acordo com o agente X" ou "O especialista Y disse". Sintetize a informação como se fosse conhecimento seu (Do Parente). Você é uma entidade única para o usuário.
     - Não cite nomes de membros do time. A resposta deve ser fluida e direta.
     - Por último, use a tool com o resultado sintetizado.
@@ -54,7 +58,7 @@ team = ParenteTeam(
     role=parente_role,
     members=loaded_agents,
     delegate_to_all_members=True,
-    tools=[AudioGenerator(), FeatureRequestTool()],
+    tools=[AudioGenerator(), FeatureRequestTool(), CommunicationEvalTool()],
     model=Gemini(id="gemini-2.5-flash"), # Parente's main model, maybe move to config too
     respond_directly=False,
     markdown=True

@@ -124,6 +124,15 @@ class Database
         try {
             $this->pdo->exec("ALTER TABLE user_requests ADD COLUMN original_message TEXT");
         } catch (Exception $e) {}
+
+        // Create Communication Evaluations Table
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS communication_evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_identifier TEXT NOT NULL,
+            trigger_message TEXT NOT NULL,
+            last_messages TEXT NOT NULL, -- JSON formatted list of last 5 messages
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
     }
 
     // --- AUDIT LOGS ---
@@ -420,6 +429,20 @@ class Database
     public function deleteUserRequest($id)
     {
         $stmt = $this->pdo->prepare("DELETE FROM user_requests WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    // --- COMMUNICATION EVALUATIONS ---
+
+    public function getCommunicationEvaluations()
+    {
+        $stmt = $this->pdo->query("SELECT * FROM communication_evaluations ORDER BY created_at DESC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function deleteCommunicationEvaluation($id)
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM communication_evaluations WHERE id = ?");
         return $stmt->execute([$id]);
     }
 }
