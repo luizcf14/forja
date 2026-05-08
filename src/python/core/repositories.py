@@ -172,3 +172,127 @@ class ConversationRepository:
             return 'active'
         finally:
             conn.close()
+
+    # ------------------------------------------------------------------
+    # LGPD — Consentimento
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def get_lgpd_status(phone_number: str) -> dict:
+        """
+        Retorna o estado de consentimento LGPD para um número de telefone.
+
+        Returns:
+            dict com chaves:
+                - status: 'pending' | 'accepted' | 'rejected'
+                - awaiting_response: bool (True se política já foi enviada)
+        """
+        conn = get_db_connection()
+        if not conn:
+            return {"status": "pending", "awaiting_response": False}
+
+        try:
+            cursor = conn.cursor()
+
+            # Tenta com prefixo 'wa:' primeiro, depois sem
+            for user_id in (f"wa:{phone_number}", phone_number):
+                cursor.execute(
+                    "SELECT lgpd_consent_status, lgpd_awaiting_response FROM conversations WHERE user_id = ?",
+                    (user_id,)
+                )
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        "status": row["lgpd_consent_status"] or "pending",
+                        "awaiting_response": bool(row["lgpd_awaiting_response"]),
+                    }
+
+            # Usuário ainda sem conversa registrada
+            return {"status": "pending", "awaiting_response": False}
+        except Exception as e:
+            print(f"Error checking LGPD status: {e}")
+            return {"status": "pending", "awaiting_response": False}
+        finally:
+            conn.close()
+
+    @staticmethod
+    def set_lgpd_consent(phone_number: str, status: str):
+        """
+        Grava o resultado do consentimento LGPD ('accepted' ou 'rejected')
+        com timestamp e remove o flag de aguardando resposta.
+        """
+        # Garante que a conversa existe antes de atualizar
+        ConversationRepository.ensure_conversation(f"wa:{phone_number}")
+
+        conn = get_db_connection()
+        if not conn:
+            return
+
+        try:
+            cursor = conn.cursor()
+
+            # Atualiza com prefixo 'wa:'
+            wa_id = f"wa:{phone_number}"
+            cursor.execute(
+                """
+                UPDATE conversations
+                SET lgpd_consent_status = ?,
+                    lgpd_consent_at = CURRENT_TIMESTAMP,
+                    lgpd_awaiting_response = 0
+                WHERE user_id = ?
+                """,
+                (status, wa_id)
+            )
+
+            # Fallback: tenta sem prefixo se não achou
+            if cursor.rowcount == 0:
+                cursor.execute(
+                    """
+                    UPDATE conversations
+                    SET lgpd_consent_status = ?,
+                        lgpd_consent_at = CURRENT_TIMESTAMP,
+                        lgpd_awaiting_response = 0
+                    WHERE user_id = ?
+                    """,
+                    (status, phone_number)
+                )
+
+            conn.commit()
+        except Exception as e:
+            print(f"Error setting LGPD consent: {e}")
+        finally:
+            conn.close()
+
+    @staticmethod
+    def set_lgpd_awaiting(phone_number: str, waiting: bool = True):
+        """
+        Marca ou desmarca o flag de 'aguardando resposta LGPD' para o número.
+        Cria a conversa se ainda não existir.
+        """
+        ConversationRepository.ensure_conversation(f"wa:{phone_number}")
+
+        conn = get_db_connection()
+        if not conn:
+            return
+
+        try:
+            cursor = conn.cursor()
+            value = 1 if waiting else 0
+
+            wa_id = f"wa:{phone_number}"
+            cursor.execute(
+                "UPDATE conversations SET lgpd_awaiting_response = ? WHERE user_id = ?",
+                (value, wa_id)
+            )
+
+            if cursor.rowcount == 0:
+                cursor.execute(
+                    "UPDATE conversations SET lgpd_awaiting_response = ? WHERE user_id = ?",
+                    (value, phone_number)
+                )
+
+            conn.commit()
+        except Exception as e:
+            print(f"Error setting LGPD awaiting: {e}")
+        finally:
+            conn.close()

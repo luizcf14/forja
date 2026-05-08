@@ -51,6 +51,40 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS communication_evaluations (
 )");
 echo "Table 'communication_evaluations' checked/created.\n";
 
+// Create Conversations Table (com colunas de consentimento LGPD)
+$pdo->exec("CREATE TABLE IF NOT EXISTS conversations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT UNIQUE NOT NULL,
+    ai_status TEXT DEFAULT 'active',
+    last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lgpd_consent_status TEXT DEFAULT 'pending',
+    lgpd_consent_at DATETIME,
+    lgpd_awaiting_response INTEGER DEFAULT 0
+)");
+echo "Table 'conversations' checked/created.\n";
+
+// Create Messages Table
+$pdo->exec("CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL,
+    sender TEXT NOT NULL,
+    content TEXT,
+    media_type TEXT,
+    media_url TEXT,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+)");
+echo "Table 'messages' checked/created.\n";
+
+// Create Settings Table (Key-Value Store)
+$pdo->exec("CREATE TABLE IF NOT EXISTS system_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)");
+echo "Table 'system_settings' checked/created.\n";
+
 // Seed Admin User
 $adminUser = 'luizcf14';
 $adminPass = 'qazx74123';
@@ -67,7 +101,6 @@ if (!$user) {
     echo "Admin user '$adminUser' created.\n";
 } else {
     echo "Admin user '$adminUser' already exists. Updating password...\n";
-    // Optional: Update password to ensure it matches the requested one
     $hashedPass = password_hash($adminPass, PASSWORD_DEFAULT);
     $stmt = $pdo->prepare("UPDATE users SET password = ?, role = ? WHERE username = ?");
     $stmt->execute([$hashedPass, $adminRole, $adminUser]);

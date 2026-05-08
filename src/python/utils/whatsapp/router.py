@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import textwrap
 
@@ -22,6 +23,8 @@ from pathlib import Path
 from .security import validate_webhook_signature
 from core.config import PROJECT_ROOT
 from core.repositories import ConversationRepository
+from services.lgpd import LGPDService
+from utils.markdown_to_whatsapp import markdown_to_whatsapp
 
 def get_ai_status(phone_number: str) -> str:
     """Check AI status for a given phone number (user_id)."""
@@ -45,6 +48,116 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
         raise ValueError("Either agent or team must be provided.")
 
     whatsapp_tools = WhatsAppTools(async_mode=True)
+
+    # ----------------------------------------------------------------
+    # Message Debounce — acumula mensagens rápidas do mesmo usuário
+    # ----------------------------------------------------------------
+    # Janela de espera em segundos (configurável via .env)
+    _DEBOUNCE_SECS: float = float(getenv("MESSAGE_DEBOUNCE_SECONDS", "4"))
+
+    # phone_number -> lista de dicts de mensagem pendentes
+    _msg_buffer: dict[str, list[dict]] = {}
+    # phone_number -> asyncio.Task em andamento
+    _debounce_tasks: dict[str, asyncio.Task] = {}
+
+    def _combine_messages(messages: list) -> dict:
+        """
+        Mescla várias mensagens do mesmo usuário em uma única.
+        Textos são concatenados com newline.
+        Mídia da primeira mensagem que a contenha é preservada.
+        """
+        if len(messages) == 1:
+            return messages[0]
+
+        base = dict(messages[0])
+        text_parts = []
+
+        for msg in messages:
+            msg_type = msg.get("type", "text")
+            if msg_type == "text":
+                text_parts.append(msg["text"]["body"])
+            elif msg_type in ("image", "video", "audio", "document", "location"):
+                caption = msg.get(msg_type, {}).get("caption", "") if msg_type != "location" else ""
+                if caption:
+                    text_parts.append(caption)
+                # Se base ainda não tem mídia, pega desta
+                if base.get("type") == "text":
+                    base["type"] = msg_type
+                    base[msg_type] = msg[msg_type]
+
+        if text_parts:
+            combined_text = "\n".join(text_parts)
+            if base.get("type") == "text":
+                base["text"] = {"body": combined_text}
+            else:
+                # Injeta o texto combinado como caption da mídia
+                media_type = base["type"]
+                base[media_type] = dict(base.get(media_type, {}))
+                base[media_type]["caption"] = combined_text
+
+        return base
+
+
+    # Sinais de fim de pensamento — disparam flush quase imediato
+    _FLUSH_TRIGGERS = ("?",)               # contém pergunta
+    _FLUSH_ENDINGS  = ("!", ".", "…")      # termina com esses caracteres
+    # Delay curto após trigger (permite chegar última mensagem da mesma "rajada")
+    _TRIGGER_FLUSH_SECS: float = 0.8
+
+    async def _schedule_debounced(message: dict):
+        """
+        Adiciona a mensagem ao buffer do usuário e reinicia o timer de debounce.
+        Se a mensagem contém um sinal de fim de pensamento ('?', '!', '.'),
+        o timer é reduzido para _TRIGGER_FLUSH_SECS em vez do debounce completo.
+        Se já houver um timer rodando, ele é cancelado e recriado.
+        """
+        phone_number = message.get("from", "unknown")
+
+        if phone_number not in _msg_buffer:
+            _msg_buffer[phone_number] = []
+        _msg_buffer[phone_number].append(message)
+
+        # Cancela timer anterior se existir
+        existing = _debounce_tasks.get(phone_number)
+        if existing and not existing.done():
+            existing.cancel()
+
+        # Detecta se a mensagem sinaliza fim do pensamento do usuário
+        wait_secs = _DEBOUNCE_SECS
+        msg_text = ""
+        if message.get("type") == "text":
+            msg_text = message.get("text", {}).get("body", "").strip()
+
+        is_end_of_thought = (
+            any(trigger in msg_text for trigger in _FLUSH_TRIGGERS)
+            or (len(msg_text) > 0 and msg_text[-1] in _FLUSH_ENDINGS)
+            or message.get("type") not in ("text",)  # mídia = flush rápido
+        )
+
+        if is_end_of_thought:
+            wait_secs = _TRIGGER_FLUSH_SECS
+            log_info(f"Debounce: fim de pensamento detectado em '{msg_text[:40]}' — flush em {wait_secs}s")
+
+        # Cria novo timer com a janela escolhida
+        async def _timed_flush():
+            try:
+                await asyncio.sleep(wait_secs)
+            except asyncio.CancelledError:
+                return
+            messages = _msg_buffer.pop(phone_number, [])
+            _debounce_tasks.pop(phone_number, None)
+            if not messages:
+                return
+            if len(messages) > 1:
+                log_info(f"Debounce: combinando {len(messages)} mensagens de {phone_number}")
+            combined = _combine_messages(messages)
+            await process_message(combined, agent, team)
+
+        task = asyncio.create_task(_timed_flush())
+        _debounce_tasks[phone_number] = task
+        log_info(f"Debounce: msg {len(_msg_buffer[phone_number])} de {phone_number} (espera: {wait_secs}s)")
+    # ----------------------------------------------------------------
+
 
     @router.post("/internal_send")
     async def internal_send(body: InternalSendMessage):
@@ -255,7 +368,7 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
 
                     message = messages[0]
                     print(f"DEBUG: Webhook received message: {message}")
-                    background_tasks.add_task(process_message, message, agent, team)
+                    await _schedule_debounced(message)
 
             return {"status": "processing"}
 
@@ -375,6 +488,53 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
                 
                 return # Stop processing
             # ----------------------
+
+            # --- LGPD CONSENT LOGIC ---
+            lgpd_info = LGPDService.get_consent_status(phone_number)
+            lgpd_status = lgpd_info["status"]
+            lgpd_awaiting = lgpd_info["awaiting_response"]
+
+            if lgpd_status == "rejected" and not lgpd_awaiting:
+                # Usuário havia recusado, mas pode ter mudado de ideia.
+                # Reenvia a política e marca como aguardando nova resposta.
+                log_info(f"LGPD: User {phone_number} previously rejected. Re-sending policy to allow reconsideration.")
+                await _send_whatsapp_message(phone_number, LGPDService.get_reconsideration_message())
+                for policy_msg in LGPDService.get_policy_messages():
+                    await _send_whatsapp_message(phone_number, policy_msg)
+                LGPDService.mark_awaiting(phone_number, waiting=True)
+                return
+
+            elif lgpd_status == "accepted":
+                # Tudo certo — prossegue para a IA normalmente
+                log_info(f"LGPD: User {phone_number} has accepted consent. Proceeding.")
+
+            elif lgpd_awaiting:
+                # Política já foi enviada, aguardando resposta do usuário
+                log_info(f"LGPD: Waiting for consent response from {phone_number}.")
+                decision = LGPDService.parse_consent_response(message_text)
+
+                if decision == "accepted":
+                    LGPDService.record_consent(phone_number, "accepted")
+                    log_info(f"LGPD: {phone_number} accepted consent.")
+                    await _send_whatsapp_message(phone_number, LGPDService.get_consent_accepted_message())
+                elif decision == "rejected":
+                    LGPDService.record_consent(phone_number, "rejected")
+                    log_info(f"LGPD: {phone_number} rejected consent.")
+                    await _send_whatsapp_message(phone_number, LGPDService.get_consent_rejected_message())
+                else:
+                    # Resposta não reconhecida — reenvia o pedido
+                    log_info(f"LGPD: Unrecognized response from {phone_number}: '{message_text}'")
+                    await _send_whatsapp_message(phone_number, LGPDService.get_consent_invalid_message())
+                return  # Não processa como mensagem da IA
+
+            else:
+                # Primeira interação — envia a política e aguarda resposta
+                log_info(f"LGPD: Sending privacy policy to {phone_number}.")
+                for policy_msg in LGPDService.get_policy_messages():
+                    await _send_whatsapp_message(phone_number, policy_msg)
+                LGPDService.mark_awaiting(phone_number, waiting=True)
+                return  # Aguarda resposta na próxima mensagem
+            # --------------------------
 
             # TODO: Só temos Team, não precisa do agent.
             # Generate and send response
@@ -498,6 +658,9 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
                 log_error(f"Error sending error message: {str(send_error)}")
 
     async def _send_whatsapp_message(recipient: str, message: str, italics: bool = False):
+        # Converte Markdown para formatação compatível com WhatsApp
+        message = markdown_to_whatsapp(message)
+
         message_batches = textwrap.wrap(message, width=4000, replace_whitespace=False, drop_whitespace=False)
 
         for i, batch in enumerate(message_batches, 1):

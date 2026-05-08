@@ -96,14 +96,18 @@ class SettingsController extends Controller
                 $pid = $this->startParenteService();
                 if ($pid) {
                     $message = "Serviço iniciado com sucesso. PID: $pid";
+                    $this->db->logAction($_SESSION['user_id'], $_SESSION['user'], 'SERVICE_START', "Iniciou o serviço Parente. PID: $pid");
                 } else {
                     $error = "Falha ao iniciar o serviço.";
+                    $this->db->logAction($_SESSION['user_id'], $_SESSION['user'], 'SERVICE_START_FAILED', "Tentativa falha de iniciar o serviço Parente.");
                 }
             } elseif (isset($_POST['stop_service'])) {
                 if ($this->stopParenteService()) {
                     $message = "Serviço parado com sucesso.";
+                    $this->db->logAction($_SESSION['user_id'], $_SESSION['user'], 'SERVICE_STOP', "Parou o serviço Parente.");
                 } else {
                     $error = "Falha ao parar o serviço ou serviço não estava rodando.";
+                    $this->db->logAction($_SESSION['user_id'], $_SESSION['user'], 'SERVICE_STOP_FAILED', "Tentativa falha de parar o serviço Parente.");
                 }
             } elseif (isset($_POST['restart_service'])) {
                 $this->stopParenteService(); // Try to stop, ignore result (start fresh)
@@ -111,8 +115,10 @@ class SettingsController extends Controller
                 $pid = $this->startParenteService();
                 if ($pid) {
                     $message = "Serviço reiniciado com sucesso. Novo PID: $pid";
+                    $this->db->logAction($_SESSION['user_id'], $_SESSION['user'], 'SERVICE_RESTART', "Reiniciou o serviço Parente. Novo PID: $pid");
                 } else {
                     $error = "Falha ao reiniciar o serviço.";
+                    $this->db->logAction($_SESSION['user_id'], $_SESSION['user'], 'SERVICE_RESTART_FAILED', "Tentativa falha de reiniciar o serviço Parente.");
                 }
             }
         }

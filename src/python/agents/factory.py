@@ -115,6 +115,11 @@ def load_agents() -> List[Agent]:
                      kb_path = PROJECT_ROOT / kb_file
                 
                 if kb_path.exists():
+                    # Pre-check to skip expensive PDF parsing if already in DB
+                    if vector_db.exists() and (vector_db.name_exists(str(kb_path)) or vector_db.name_exists(kb_path.name)):
+                        print(f"  - Document already in DB (skipping load): {kb_file}")
+                        continue
+                        
                     print(f"  - Adding document: {kb_file}")
                     if kb_path.suffix.lower() == '.pdf':
                         if PDFReader:
