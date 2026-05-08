@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import textwrap
 
 from os import getenv
 from typing import Optional
@@ -24,7 +23,7 @@ from .security import validate_webhook_signature
 from core.config import PROJECT_ROOT
 from core.repositories import ConversationRepository
 from services.lgpd import LGPDService
-from utils.markdown_to_whatsapp import markdown_to_whatsapp
+from utils.markdown_to_whatsapp import markdown_to_whatsapp, split_for_whatsapp
 
 def get_ai_status(phone_number: str) -> str:
     """Check AI status for a given phone number (user_id)."""
@@ -661,21 +660,20 @@ def attach_routes(router: APIRouter, agent: Optional[Agent] = None, team: Option
         # Converte Markdown para formatação compatível com WhatsApp
         message = markdown_to_whatsapp(message)
 
-        message_batches = textwrap.wrap(message, width=4000, replace_whitespace=False, drop_whitespace=False)
+        # Divide em múltiplas mensagens de forma semântica e humanizada
+        batches = split_for_whatsapp(message)
 
-        for i, batch in enumerate(message_batches, 1):
-            if len(message_batches) > 1:
-                batch_message = f"[{i}/{len(message_batches)}] {batch}"
-            else:
-                batch_message = f"{batch}"
-
-
+        for batch in batches:
             if italics:
-                # TODO: É possível que, caso o texto possua "\n\n", a menssagem gere um "__" literal.
-                formatted_batch = "\n".join([f"_{line}_" for line in batch_message.split("\n")])
-                await whatsapp_tools.send_text_message_async(recipient=recipient, text=formatted_batch)
+                # Formata cada linha em itálico
+                formatted = "\n".join(f"_{line}_" if line.strip() else "" for line in batch.split("\n"))
+                await whatsapp_tools.send_text_message_async(recipient=recipient, text=formatted)
             else:
-                await whatsapp_tools.send_text_message_async(recipient=recipient, text=batch_message)
+                await whatsapp_tools.send_text_message_async(recipient=recipient, text=batch)
+
+            # Pequena pausa entre mensagens para simular ritmo humano
+            if len(batches) > 1:
+                await asyncio.sleep(0.6)
 
     async def send_audio_message_async(media_id: str, recipient: str):
         """Send an audio message to a WhatsApp user."""

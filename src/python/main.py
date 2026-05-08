@@ -7,6 +7,7 @@ from agno.models.google import Gemini
 # Import custom components
 from core.config import DB_PATH, get_model_config
 from core.database import get_db_connection
+from core.migrations import run_migrations
 from core.models import get_model
 from core.team import ParenteTeam
 from agents.factory import load_agents
@@ -20,11 +21,15 @@ from services.analyzer import ConversationAnalyzer
 
 print(f"Searching for database at: {DB_PATH}")
 
+# 0. Auto-migrate: garante que o schema está atualizado antes de qualquer coisa
+run_migrations()
+
 # 1. Load Agents
 loaded_agents = load_agents()
 
 # 2. Initialize Memory
-db = SqliteDb(db_file="teamMemory.db")
+# Memórias do agente (nomes, preferências) ficam no mesmo arquivo do banco principal
+db = SqliteDb(db_file=str(DB_PATH))
 
 # 3. Initialize Team (Parente)
 # Parente Team Configuration

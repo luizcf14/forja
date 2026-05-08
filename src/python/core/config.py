@@ -12,14 +12,24 @@ CRIPT_DIR = Path(__file__).parent.absolute()
 # PROJECT_ROOT is src/python/../../.. = root
 PROJECT_ROOT = CRIPT_DIR.parent.parent.parent
 
-# Database
-DB_PATH = PROJECT_ROOT / "database.sqlite"
+# ── Database ────────────────────────────────────────────────────────────────
+# DB_FILE pode ser definido explicitamente no .env.
+# Se não definido, detecta pelo APP_ENV:
+#   production  → database_prod.sqlite
+#   qualquer outro → database.sqlite
+_app_env = os.getenv("APP_ENV", "development").strip('"').lower()
+_db_file_default = "database_prod.sqlite" if _app_env == "production" else "database.sqlite"
+_db_file = os.getenv("DB_FILE", _db_file_default)
+DB_PATH = PROJECT_ROOT / _db_file
+
 VECTOR_DB_PATH = PROJECT_ROOT / "lancedb_data"
 
-# Keys
+print(f"[config] APP_ENV={_app_env} | DB={DB_PATH.name}")
+
+# ── Keys ─────────────────────────────────────────────────────────────────────
 WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
 
-# Agent Defaults
+# ── Agent Defaults ────────────────────────────────────────────────────────────
 DEFAULT_MODEL_PROVIDER = "gemini"
 DEFAULT_MODEL_NAME = "gemini-2.5-flash"
 DEFAULT_HOST = "http://localhost:11434"

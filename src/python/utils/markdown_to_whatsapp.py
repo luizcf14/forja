@@ -142,3 +142,100 @@ def markdown_to_whatsapp(text: str) -> str:
     text = _restore_placeholders(text, placeholders)
 
     return text.strip()
+
+
+def split_for_whatsapp(text: str, max_chars: int = 1200) -> list:
+    """
+    Divide uma resposta longa em várias mensagens de WhatsApp de forma semântica
+    e humanizada, sem cortar no meio de palavras ou parágrafos.
+
+    Estratégia (em ordem de prioridade):
+    1. Divide no parágrafo duplo (\n\n) — fronteira natural entre ideias.
+    2. Agrupa parágrafos curtos adjacentes até atingir max_chars.
+    3. Se um parágrafo individual ainda exceder max_chars, divide nas linhas (\n).
+    4. Se uma linha exceder max_chars, divide em fronteiras de frase (. ! ?).
+
+    Args:
+        text:      Texto já convertido para formato WhatsApp.
+        max_chars: Tamanho máximo desejado por mensagem (padrão 1200).
+
+    Returns:
+        Lista de strings, cada uma sendo uma mensagem separada.
+    """
+    if not text:
+        return []
+
+    # ── 1. Divide em parágrafos (blocos separados por linha em branco) ──────
+    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+
+    # ── 2. Agrupa parágrafos adjacentes até max_chars ───────────────────────
+    groups: list[str] = []
+    current = ""
+
+    for para in paragraphs:
+        if not current:
+            current = para
+        elif len(current) + 2 + len(para) <= max_chars:
+            current += "\n\n" + para
+        else:
+            groups.append(current)
+            current = para
+
+    if current:
+        groups.append(current)
+
+    # ── 3. Quebra grupos ainda grandes demais nas linhas (\n) ───────────────
+    result: list[str] = []
+
+    for group in groups:
+        if len(group) <= max_chars:
+            result.append(group)
+            continue
+
+        lines = group.split("\n")
+        chunk = ""
+        for line in lines:
+            if not chunk:
+                chunk = line
+            elif len(chunk) + 1 + len(line) <= max_chars:
+                chunk += "\n" + line
+            else:
+                # ── 4. Se uma linha isolada ainda for grande, divide em frases
+                if len(chunk) > max_chars:
+                    result.extend(_split_by_sentence(chunk, max_chars))
+                else:
+                    result.append(chunk)
+                chunk = line
+
+        if chunk:
+            if len(chunk) > max_chars:
+                result.extend(_split_by_sentence(chunk, max_chars))
+            else:
+                result.append(chunk)
+
+    return [r.strip() for r in result if r.strip()]
+
+
+def _split_by_sentence(text: str, max_chars: int) -> list:
+    """Divide um texto longo em fronteiras de frase como último recurso."""
+    import re
+
+    # Separa em sentenças preservando o delimitador
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    chunks: list[str] = []
+    current = ""
+
+    for sentence in sentences:
+        if not current:
+            current = sentence
+        elif len(current) + 1 + len(sentence) <= max_chars:
+            current += " " + sentence
+        else:
+            chunks.append(current)
+            current = sentence
+
+    if current:
+        chunks.append(current)
+
+    return chunks
+
