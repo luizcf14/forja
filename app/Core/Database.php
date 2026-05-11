@@ -7,13 +7,41 @@ class Database
     public function __construct()
     {
         try {
-            $dbFile = __DIR__ . '/../../database.sqlite';
+            $dbFile = $this->getDbFilePath();
             $this->pdo = new PDO('sqlite:' . $dbFile);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->initDb();
         } catch (PDOException $e) {
             die("Database connection failed: " . $e->getMessage());
         }
+    }
+
+    private function getDbFilePath()
+    {
+        $envFile = __DIR__ . '/../../.env';
+        $dbFile = 'database.sqlite';
+        
+        if (file_exists($envFile)) {
+            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (strpos($line, '#') === 0) continue;
+                if (strpos($line, '=') !== false) {
+                    list($name, $value) = explode('=', $line, 2);
+                    if (trim($name) === 'APP_ENV' && trim(trim($value), '"\'') === 'production') {
+                        $dbFile = 'database_prod.sqlite';
+                        break;
+                    }
+                }
+            }
+        }
+        
+        return __DIR__ . '/../../' . $dbFile;
+    }
+
+    public function getPdo()
+    {
+        return $this->pdo;
     }
 
     private function initDb()

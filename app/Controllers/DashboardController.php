@@ -18,9 +18,7 @@ class DashboardController extends Controller
             $this->redirect('/');
         }
         // Get direct PDO access for custom queries
-        $dbFile = __DIR__ . '/../../database.sqlite';
-        $this->pdo = new PDO('sqlite:' . $dbFile);
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->pdo = $this->db->getPdo();
     }
 
     public function index()
