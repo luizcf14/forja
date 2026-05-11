@@ -49,6 +49,10 @@ $router->post('/notifications', 'NotificationController@index');
 // Audit
 $router->get('/audit', 'AuditController@index');
 
+// Dashboard
+$router->get('/dashboard', 'DashboardController@index');
+$router->get('/api/dashboard/stats', 'DashboardController@apiStats');
+
 // Conversations
 $router->get('/conversations', 'ConversationController@index');
 $router->get('/conversations/show', 'ConversationController@show');
